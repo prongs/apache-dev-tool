@@ -65,17 +65,23 @@ def main():
                       help='Review board that needs to be updated')
     popt.add_argument('-t', '--testing-done', action='store', dest='testing_done', required=False,
                       help='Text for the Testing Done section of the reviewboard')
+    popt.add_argument('-c', '--comment', action='store', dest='comment', required=False,
+                      help='What to comment on jira')
     popt.add_argument('-p', '--publish', action='store_true', dest='publish', required=False,
                       help='Whether to make the review request public', default=False)
     opt = popt.parse_args()
 
     client = RBTJIRAClient()
-    if opt.action == 'post-review':
+    if opt.action in ['post-review', 'avail-patch']:
         if len(opt.jira) != 1:
             print  "Please supply exactly one jira for posting review"
             sys.exit(1)
         client.valid_jira(opt.jira[0])
-        ReviewPoster(client, opt).post_review()
+        review_poster = ReviewPoster(client, opt)
+        if opt.action == 'post-review':
+            review_poster.post_review()
+        else:
+            review_poster.avail_patch()
     elif opt.action == 'commit':
         for jira in opt.jira:
             client.valid_jira(jira)
