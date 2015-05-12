@@ -37,7 +37,7 @@ from commit import Committer
 from post_review import ReviewPoster
 
 
-possible_options = ['post-review', 'publish', 'clean', 'avail-patch', 'commit']
+possible_options = ['post-review', 'publish', 'clean', 'submit-patch', 'commit']
 
 
 def Option(s):
@@ -72,7 +72,7 @@ def main():
     opt = popt.parse_args()
 
     client = RBTJIRAClient()
-    if opt.action in ['post-review', 'avail-patch']:
+    if opt.action in ['post-review', 'submit-patch']:
         if len(opt.jira) != 1:
             print  "Please supply exactly one jira for posting review"
             sys.exit(1)
@@ -86,7 +86,7 @@ def main():
         for jira in opt.jira:
             client.valid_jira(jira)
         Committer(client, opt).commit()
-    elif opt.action == "avail-patch":
+    elif opt.action == "submit-patch":
         # PatchProvider(client, opt).provide_patch()
         pass
     elif opt.action == "clean":

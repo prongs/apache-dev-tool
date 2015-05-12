@@ -75,6 +75,14 @@ class ReviewPoster:
         patch_file_path = tempfile.gettempdir() + "/" + self.opt.jira + '_' + str(file_suffix) + '.patch'
         with open(patch_file_path, 'wb') as patch_file:
             patch_file.write(data)
-        self.client.jira_client.add_attachment(self.issue, patch_file_path)
-        self.client.jira_client.add_comment(self.issue, comment)
-        print "Attached to jira"
+        if True or self.issue.fields.assignee.name != self.client.jira_client.session()._session.auth[0]:
+            self.client.jira_client.assign_issue(self.issue, self.client.jira_client.session()._session.auth[0])
+        transitions = [transition for transition in self.client.jira_client.transitions(self.issue) if transition['name']=='Submit Patch']
+        if not transitions:
+            print "no transitions for submitting patch"
+            sys.exit(2)
+        else:
+            self.client.jira_client.add_attachment(self.issue, patch_file_path)
+            self.client.jira_client.add_comment(self.issue, comment)
+            self.client.jira_client.transition_issue(self.issue, transitions[0]['id'])
+            print "Submitted patch in jira"
