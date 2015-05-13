@@ -105,12 +105,17 @@ class RBTJIRAClient:
 
 
     def get_rb_client(self):
+        options = {}
         with open(".reviewboardrc") as reviewboardrc:
-            options = dict(map(lambda x: x.replace('"', '').strip(), line.strip().split('=')) for line in reviewboardrc)
-        rbclient = RBClient(options['REVIEWBOARD_URL'].replace('https', 'http'))
+            for line in reviewboardrc:
+                k, v = line.split("=")
+                k = k.strip()
+                v = eval(v.strip())
+                options[k] = v
+        rbclient = RBClient(options['REVIEWBOARD_URL'])
         self.repository = options['REPOSITORY']
         self.branch = options['BRANCH']
-        self.reviewers = None
+        self.target_groups = None
         if options.has_key('TARGET_GROUPS'):
             self.target_groups = options['TARGET_GROUPS']
         if rbclient.get_root().get_session()['authenticated']:
