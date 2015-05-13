@@ -31,6 +31,7 @@ import sys
 from commands import *
 
 import argparse
+from cleaner import Cleaner
 
 from clients import RBTJIRAClient
 from commit import Committer
@@ -65,6 +66,8 @@ def main():
                       help='Review board that needs to be updated')
     popt.add_argument('-t', '--testing-done', action='store', dest='testing_done', required=False,
                       help='Text for the Testing Done section of the reviewboard')
+    popt.add_argument('-ta', '--testing-done-append', action='store', dest='testing_done_append', required=False,
+                      help='Text to append to Testing Done section of the reviewboard', nargs = "*")
     popt.add_argument('-c', '--comment', action='store', dest='comment', required=False,
                       help='What to comment on jira')
     popt.add_argument('-p', '--publish', action='store_true', dest='publish', required=False,
@@ -88,7 +91,7 @@ def main():
         # PatchProvider(client, opt).provide_patch()
         pass
     elif opt.action == "clean":
-        pass
+        Cleaner(client).clean()
         # Cleaner().clean()
         # print 'Creating diff against', opt.branch, 'and uploading patch to JIRA', opt.jira
         # jira = get_jira()

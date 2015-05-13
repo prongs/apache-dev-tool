@@ -40,6 +40,8 @@ class ReviewPoster:
             del draft_update_args['description']
         if self.opt.testing_done:
             draft_update_args['testing_done'] = self.opt.testing_done
+        if self.opt.testing_done_append:
+            draft_update_args['testing_done'] = draft.testing_done + "\n" + "\n".join(self.opt.testing_done_append)
         if self.opt.publish:
             draft_update_args['public'] = True
         draft.update(**draft_update_args)
