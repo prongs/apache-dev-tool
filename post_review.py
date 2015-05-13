@@ -71,6 +71,9 @@ class ReviewPoster:
             self.attach_patch_in_jira("%02d" % len(diffs), diff_str, "Taking patch from reviewboard and attaching")
 
     def attach_patch_in_jira(self, file_suffix, data, comment):
+        if len(data.strip()) == 0:
+            print "No diff"
+            sys.exit(2)
         patch_file_path = tempfile.gettempdir() + "/" + self.opt.jira + '_' + str(file_suffix) + '.patch'
         with open(patch_file_path, 'wb') as patch_file:
             patch_file.write(data)
