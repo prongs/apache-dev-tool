@@ -37,7 +37,7 @@ from commit import Committer
 from post_review import ReviewPoster
 
 
-possible_options = ['post-review', 'publish', 'clean', 'submit-patch', 'commit']
+possible_options = ['post-review', 'clean', 'submit-patch', 'commit']
 
 
 def Option(s):
@@ -51,12 +51,12 @@ def Option(s):
 def main():
     ''' main(), shut up, pylint '''
     popt = argparse.ArgumentParser(description='rbt jira command line tool')
-    popt.add_argument('action', nargs='?', action="store")
+    popt.add_argument('action', nargs='?', action="store", help="action of the command. One of post-review, submit-patch, commit and clean")
     popt.add_argument('-j', '--jira', action='store', dest='jira', required=False,
                       help='JIRAs. ',
                       default=[getoutput("git rev-parse --abbrev-ref HEAD")], nargs="*")
     popt.add_argument('-b', '--branch', action='store', dest='branch', required=False,
-                      help='Tracking branch to create diff against', default="master")
+                      help='Tracking branch to create diff against')
     popt.add_argument('-s', '--summary', action='store', dest='summary', required=False,
                       help='Summary for the reviewboard')
     popt.add_argument('-d', '--description', action='store', dest='description', required=False,
@@ -74,17 +74,15 @@ def main():
     client = RBTJIRAClient()
     if opt.action in ['post-review', 'submit-patch']:
         if len(opt.jira) != 1:
-            print  "Please supply exactly one jira for posting review"
+            print "Please supply exactly one jira for", opt.action
             sys.exit(1)
         client.valid_jira(opt.jira[0])
         review_poster = ReviewPoster(client, opt)
         if opt.action == 'post-review':
             review_poster.post_review()
         else:
-            review_poster.avail_patch()
+            review_poster.submit_patch()
     elif opt.action == 'commit':
-        for jira in opt.jira:
-            client.valid_jira(jira)
         Committer(client, opt).commit()
     elif opt.action == "submit-patch":
         # PatchProvider(client, opt).provide_patch()

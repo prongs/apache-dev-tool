@@ -111,8 +111,8 @@ class RBTJIRAClient:
         self.repository = options['REPOSITORY']
         self.branch = options['BRANCH']
         self.reviewers = None
-        if options.has_key('REVIEWER_GROUPS'):
-            self.reviewers = options['REVIEWER_GROUPS']
+        if options.has_key('TARGET_GROUPS'):
+            self.target_groups = options['TARGET_GROUPS']
         if rbclient.get_root().get_session()['authenticated']:
             return rbclient
         username = raw_input("Enter review board Username: ")

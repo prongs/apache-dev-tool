@@ -28,17 +28,16 @@ class ReviewPoster:
         review_request.get_diffs().upload_diff(diff_str)
         draft = review_request.get_draft()
         draft_update_args = {"bugs_closed": self.opt.jira}
-        if self.client.reviewers:
-            draft_update_args['target_groups'] = self.client.reviewers
+        if self.client.target_groups:
+            draft_update_args['target_groups'] = self.client.target_groups
         draft_update_args['summary'] = self.opt.summary or draft.summary or self.issue.fields.summary
         if draft_update_args['summary'].upper().find(self.opt.jira) != 0:
             draft_update_args['summary'] = self.issue.key + ": " + draft_update_args['summary']
         if draft_update_args['summary'] == draft.summary:
             del draft_update_args['summary']
-        if not draft.description or self.opt.description:
-            draft_update_args['description'] = self.opt.description or self.issue.fields.description
-            if not draft_update_args['description']:
-                del draft_update_args['description']
+        draft_update_args['description'] = self.opt.description or draft.description or self.issue.fields.description
+        if not draft_update_args['description'] or draft_update_args['description'] == draft.description:
+            del draft_update_args['description']
         if self.opt.testing_done:
             draft_update_args['testing_done'] = self.opt.testing_done
         if self.opt.publish:
@@ -50,7 +49,7 @@ class ReviewPoster:
         if self.opt.publish and review_request.get_diffs().total_results <= 1:
             self.client.jira_client.add_comment(self.issue, "Created " + review_request.absolute_url)
 
-    def avail_patch(self):
+    def submit_patch(self):
         if not self.opt.reviewboard:
             diff_str = getoutput('git diff ' + self.opt.branch + "..HEAD")
             pluses = diff_str.count('\n+')
@@ -77,7 +76,8 @@ class ReviewPoster:
             patch_file.write(data)
         if True or self.issue.fields.assignee.name != self.client.jira_client.session()._session.auth[0]:
             self.client.jira_client.assign_issue(self.issue, self.client.jira_client.session()._session.auth[0])
-        transitions = [transition for transition in self.client.jira_client.transitions(self.issue) if transition['name']=='Submit Patch']
+        transitions = [transition for transition in self.client.jira_client.transitions(self.issue) if
+                       transition['name'] == 'Submit Patch']
         if not transitions:
             print "no transitions for submitting patch"
             sys.exit(2)
