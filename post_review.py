@@ -24,7 +24,7 @@ class ReviewPoster:
         os.system("git merge " + self.opt.branch)
         os.system("git mergetool")
         os.system('git commit -am "merge with ' + self.opt.branch + '"')
-        diff_str = getoutput('git diff ' + self.opt.branch + "..HEAD")
+        diff_str = getoutput('git diff --full-index ' + self.opt.branch + "..HEAD") + '\n'
         review_request.get_diffs().upload_diff(diff_str)
         draft = review_request.get_draft()
         draft_update_args = {"bugs_closed": self.opt.jira}
@@ -53,7 +53,8 @@ class ReviewPoster:
 
     def submit_patch(self):
         if not self.opt.reviewboard:
-            diff_str = getoutput('git diff ' + self.opt.branch + "..HEAD")
+            print "no reviewboard entry found"
+            diff_str = getoutput('git diff --full-index ' + self.opt.branch + "..HEAD")
             pluses = diff_str.count('\n+')
             minuses = diff_str.count('\n-')
             if pluses + minuses > 10:
@@ -77,9 +78,10 @@ class ReviewPoster:
             print "No diff"
             sys.exit(2)
         patch_file_path = tempfile.gettempdir() + "/" + self.opt.jira + '_' + str(file_suffix) + '.patch'
-        with open(patch_file_path, 'wb') as patch_file:
-            patch_file.write(data)
-        if True or self.issue.fields.assignee.name != self.client.jira_client.session()._session.auth[0]:
+        with open(patch_file_path, 'w') as patch_file:
+            print >> patch_file,  data
+        print "patch file at: ", patch_file_path
+        if self.issue.fields.assignee.name != self.client.jira_client.session()._session.auth[0]:
             self.client.jira_client.assign_issue(self.issue, self.client.jira_client.session()._session.auth[0])
         transitions = [transition for transition in self.client.jira_client.transitions(self.issue) if
                        transition['name'] == 'Submit Patch']
