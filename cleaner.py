@@ -18,7 +18,7 @@ class Cleaner:
             jira = re.match(r'^LENS-\d+', branch).group(0)
             issue = self.client.jira_client.issue(jira)
             resolution = issue.fields.resolution
-            if resolution and resolution['name'] == 'Fixed':
+            if resolution and resolution.name == 'Fixed':
                 print "Deleting branch %s as issue %s is marked Fixed" % (branch, issue)
                 os.system("git branch -D %s" % branch)
                 os.system("git push origin --delete %s" % branch)
@@ -30,7 +30,7 @@ class Cleaner:
         for jira, rb_id in self.client.jira_to_rbt_map:
             issue = self.client.jira_client.issue(jira)
             resolution = issue.fields.resolution
-            if resolution and resolution['name'] == 'Fixed':
+            if resolution and resolution.name == 'Fixed':
                 to_delete.append(jira)
                 self.client.rb_client.get_review_request(review_request_id=rb_id).update(status='submitted')
         for jira in to_delete:
