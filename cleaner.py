@@ -27,7 +27,7 @@ class Cleaner:
     def close_review_requests(self):
         print "Closing review requests of fixed jiras"
         to_delete = []
-        for jira, rb_id in self.client.jira_to_rbt_map:
+        for jira, rb_id in self.client.jira_to_rbt_map.items():
             issue = self.client.jira_client.issue(jira)
             resolution = issue.fields.resolution
             if resolution and resolution.name == 'Fixed':
@@ -36,4 +36,3 @@ class Cleaner:
         for jira in to_delete:
             del self.client.jira_to_rbt_map[jira]
         print "Done"
-        
