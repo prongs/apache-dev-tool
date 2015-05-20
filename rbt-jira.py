@@ -72,6 +72,8 @@ def main():
                       help='What to comment on jira')
     popt.add_argument('-p', '--publish', action='store_true', dest='publish', required=False,
                       help='Whether to make the review request public', default=False)
+    popt.add_argument('-o', '--open', action='store_true', dest='open', required=False,
+                      help='Whether to open the review request in browser', default=False)
     opt = popt.parse_args()
 
     client = RBTJIRAClient()

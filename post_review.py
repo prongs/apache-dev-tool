@@ -4,7 +4,7 @@ import sys
 import tempfile
 import time
 import datetime
-
+import webbrowser
 
 class ReviewPoster:
     def __init__(self, client, opt):
@@ -46,6 +46,8 @@ class ReviewPoster:
             draft_update_args['public'] = True
         draft.update(**draft_update_args)
         print "created/updated:", review_request.absolute_url
+        if self.opt.open:
+            webbrowser.open_new_tab(review_request.absolute_url)
         if not self.opt.reviewboard:
             self.client.put_rb_for_jira(self.opt.jira, review_request.id)
         if self.opt.publish and review_request.get_diffs().total_results <= 1:
