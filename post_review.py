@@ -6,6 +6,7 @@ import time
 import datetime
 import webbrowser
 
+
 class ReviewPoster:
     def __init__(self, client, opt):
         self.client = client
@@ -81,9 +82,10 @@ class ReviewPoster:
             sys.exit(2)
         patch_file_path = tempfile.gettempdir() + "/" + self.opt.jira + '_' + str(file_suffix) + '.patch'
         with open(patch_file_path, 'w') as patch_file:
-            print >> patch_file,  data
+            print >> patch_file, data
         print "patch file at: ", patch_file_path
-        if self.issue.fields.assignee.name != self.client.jira_client.session()._session.auth[0]:
+        if not self.issue.fields.assignee or self.issue.fields.assignee.name != \
+                self.client.jira_client.session()._session.auth[0]:
             self.client.jira_client.assign_issue(self.issue, self.client.jira_client.session()._session.auth[0])
         transitions = [transition for transition in self.client.jira_client.transitions(self.issue) if
                        transition['name'] == 'Submit Patch']
