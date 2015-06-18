@@ -1,8 +1,9 @@
 import os
+import sys
 
 from bs4 import BeautifulSoup
+from commands import getoutput
 import requests
-import sys
 
 
 class Attachment:
@@ -52,11 +53,6 @@ class Committer:
                 for i, attachment in enumerate(attachments):
                     print "%d: %s" % (i, attachment)
                 chosen_attachment = attachments[input("Enter the number corresponding to the desired patch: ")]
-            status = os.system("curl " + chosen_attachment.url + " | git apply")
-            if status != 0:
-                "Patch Doesn't cleanly apply."
-                sys.exit(status)
-            os.system("git add --all .")
             email = issue.fields.assignee.emailAddress.replace(' at ', '@').replace(' dot ', '.')
             name = issue.fields.assignee.displayName
             message = issue.fields.summary
@@ -64,13 +60,33 @@ class Committer:
             if rb_id:
                 review_request = self.client.rb_client.get_review_request(review_request_id=rb_id)
                 message = review_request.summary
+                rb_diff = review_request.get_diffs()[-1].get_patch().data
+                jira_diff = requests.get(chosen_attachment.url).text
+                if rb_diff.strip() != jira_diff.strip():
+                    print "reviewboard diff and chosen diff are different"
+                    sys.exit(1)
+            status = os.system("curl " + chosen_attachment.url + " | git apply")
+            if status != 0:
+                "Patch Doesn't cleanly apply."
+                self.client.jira_client.add_comment(issue,
+                                                    "Patch doesn't cleanly apply. Please sync with latest and update")
+                sys.exit(status)
+            os.system("git add --all .")
             if message.find(issue.key) == -1:
                 message = issue.key + ": " + message
-            cmd = 'git commit --author "%s <%s>" -m "%s" ' % (name, email, message)
+            cmd = 'git commit --author "%s <%s>" -m "%s" ' % (name, email, message.replace('"', '\\"'))
             print cmd
             status = os.system(cmd)
             if status != 0:
                 print "Commit failed"
                 sys.exit(status)
-        if self.opt.publish:
-            print "publish true, but not pushing commits."
+            transitions = [transition for transition in self.client.jira_client.transitions(issue) if
+                       transition['name'] == 'Resolve Issue']
+            if not transitions:
+                print "No transitions for resolve issue"
+                sys.exit(1)
+            self.client.jira_client.add_comment(issue, "Committed. Thanks [~%s]" % (issue.fields.assignee.name))
+            self.client.jira_client.transition_issue(issue, transitions[0]['id'])
+        if getoutput("git status").find("nothing to commit, working directory clean") != -1:
+            print "Everything committed. Pushing"
+            os.system("git push origin " + self.branch)
