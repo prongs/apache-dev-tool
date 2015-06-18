@@ -88,5 +88,5 @@ class Committer:
             self.client.jira_client.add_comment(issue, "Committed. Thanks [~%s]" % (issue.fields.assignee.name))
             self.client.jira_client.transition_issue(issue, transitions[0]['id'])
         if getoutput("git status").find("nothing to commit, working directory clean") != -1:
-            print "Everything committed. Pushing"
+            print "Everything committed nicely. Pushing"
             os.system("git push origin " + self.branch)
