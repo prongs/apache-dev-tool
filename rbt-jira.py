@@ -70,6 +70,8 @@ def main():
                       help='Text to append to Testing Done section of the reviewboard', nargs = "*")
     popt.add_argument('-c', '--comment', action='store', dest='comment', required=False,
                       help='What to comment on jira')
+    popt.add_argument('-ch', '--choose-patch', action='store_true', dest='choose_patch', required=False,
+                      help='Whether Ask for which patch to commit.', default=False)
     popt.add_argument('-p', '--publish', action='store_true', dest='publish', required=False,
                       help='Whether to make the review request public', default=False)
     popt.add_argument('-o', '--open', action='store_true', dest='open', required=False,
