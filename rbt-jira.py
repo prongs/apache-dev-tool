@@ -60,6 +60,8 @@ def main():
                       help='Tracking branch to create diff against')
     popt.add_argument('-s', '--summary', action='store', dest='summary', required=False,
                       help='Summary for the reviewboard')
+    popt.add_argument('-m', '--commit-message', action='store', dest='commit_message', required=False,
+                      help='Commit Message')
     popt.add_argument('-d', '--description', action='store', dest='description', required=False,
                       help='Description for reviewboard')
     popt.add_argument('-r', '--rb', action='store', dest='reviewboard', required=False,

@@ -108,13 +108,17 @@ class RBTJIRAClient:
         options = {}
         with open(".reviewboardrc") as reviewboardrc:
             for line in reviewboardrc:
-                k, v = line.split("=")
+                if line.startswith("#"):
+                    continue
+                if len(line.strip()) == 0:
+                    continue
+                k, v = line.strip().split("=")
                 k = k.strip()
                 v = eval(v.strip())
                 options[k] = v
         rbclient = RBClient(options['REVIEWBOARD_URL'])
         self.repository = options['REPOSITORY']
-        self.branch = options['BRANCH']
+        self.branch = options.get('BRANCH') or options.get('TRACKING_BRANCH')
         self.target_groups = None
         if options.has_key('TARGET_GROUPS'):
             self.target_groups = options['TARGET_GROUPS']

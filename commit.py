@@ -72,6 +72,7 @@ class Committer:
                                                     "Patch doesn't cleanly apply. Please sync with latest and update")
                 sys.exit(status)
             os.system("git add --all .")
+            message = self.opt.commit_message or message
             if message.find(issue.key) == -1:
                 message = issue.key + ": " + message
             cmd = 'git commit --author "%s <%s>" -m "%s" ' % (name, email, message.replace('"', '\\"'))
@@ -80,6 +81,7 @@ class Committer:
             if status != 0:
                 print "Commit failed"
                 sys.exit(status)
+            os.system("git commit --amend")
             transitions = [transition for transition in self.client.jira_client.transitions(issue) if
                        transition['name'] == 'Resolve Issue']
             if not transitions:

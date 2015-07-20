@@ -60,7 +60,7 @@ class ReviewPoster:
             diff_str = getoutput('git diff --full-index ' + self.opt.branch + "..HEAD")
             pluses = diff_str.count('\n+')
             minuses = diff_str.count('\n-')
-            if pluses + minuses > 10:
+            if pluses + minuses > 20:
                 print "Creating a review request is recommended. Please use post-review command"
                 sys.exit(0)
             print "Diff is small enough, posting directly to jira as attachment"
