@@ -28,33 +28,43 @@ I'll assume you are using reviewboard(of course) and can understand what the abo
 This is what help for the command shows:
 
       $ python /path/to/clone/of/rbt-jira -h
-      usage: /path/to/clone/of/rbt-jira [-h] [action] [-j [JIRA [JIRA ...]]] [-b BRANCH] [-s SUMMARY]
-                         [-d DESCRIPTION] [-r REVIEWBOARD] [-t TESTING_DONE]
-                         [-c COMMENT] [-p]
-                         
-      
-      rbt jira command line tool
-      
-      positional arguments:
-        action                action of the command. One of post-review, submit-patch, commit and clean
-      
-      optional arguments:
-        -h, --help            show this help message and exit
-        -j [JIRA [JIRA ...]], --jira [JIRA [JIRA ...]]
-                              JIRAs.
-        -b BRANCH, --branch BRANCH
-                              Tracking branch to create diff against
-        -s SUMMARY, --summary SUMMARY
-                              Summary for the reviewboard
-        -d DESCRIPTION, --description DESCRIPTION
-                              Description for reviewboard
-        -r REVIEWBOARD, --rb REVIEWBOARD
-                              Review board that needs to be updated
-        -t TESTING_DONE, --testing-done TESTING_DONE
-                              Text for the Testing Done section of the reviewboard
-        -c COMMENT, --comment COMMENT
-                              What to comment on jira
-        -p, --publish         Whether to make the review request public
+      usage: rbt-jira.py [-h] [-j [JIRA [JIRA ...]]] [-b BRANCH] [-s SUMMARY]
+                   [-m COMMIT_MESSAGE] [-d DESCRIPTION] [-r REVIEWBOARD]
+                   [-t TESTING_DONE]
+                   [-ta [TESTING_DONE_APPEND [TESTING_DONE_APPEND ...]]]
+                   [-c COMMENT] [-ch] [-p] [-o]
+                   [action]
+
+        rbt jira command line tool
+        
+        positional arguments:
+          action                action of the command. One of post-review, submit-
+                                patch, commit and clean
+        
+        optional arguments:
+          -h, --help            show this help message and exit
+          -j [JIRA [JIRA ...]], --jira [JIRA [JIRA ...]]
+                                JIRAs.
+          -b BRANCH, --branch BRANCH
+                                Tracking branch to create diff against
+          -s SUMMARY, --summary SUMMARY
+                                Summary for the reviewboard
+          -m COMMIT_MESSAGE, --commit-message COMMIT_MESSAGE
+                                Commit Message
+          -d DESCRIPTION, --description DESCRIPTION
+                                Description for reviewboard
+          -r REVIEWBOARD, --rb REVIEWBOARD
+                                Review board that needs to be updated
+          -t TESTING_DONE, --testing-done TESTING_DONE
+                                Text for the Testing Done section of the reviewboard
+          -ta [TESTING_DONE_APPEND [TESTING_DONE_APPEND ...]], --testing-done-append [TESTING_DONE_APPEND [TESTING_DONE_APPEND ...]]
+                                Text to append to Testing Done section of the
+                                reviewboard
+          -c COMMENT, --comment COMMENT
+                                What to comment on jira
+          -ch, --choose-patch   Whether Ask for which patch to commit.
+          -p, --publish         Whether to make the review request public
+          -o, --open            Whether to open the review request in browser
         
         
 `action` can be `post-review`, `submit-patch`, `commit`, `clean`.
@@ -82,10 +92,11 @@ Just like post-review, it needs `-j` argument, but can deduce from current branc
 
 
 ### Commit
-not yet implemented
+
+Commits the given jira id. Checks whether it's patch available, if yes, gets the most recent diff. If there's a reviewboard entry, compares most recent diffs of both. proceeds only if same. Then applies the patch, commits the changes. Picks commit message if passed in the command. Otherwise it picks from reviewboard if exists. The last preference is to pick from jira summary. Commits, comments on jira, resolves the jira and pushes the commit. 
 
 ### Clean
-not yet implemented
+Deletes branches for jiras resolved. cleans up local storage. Closes reviewboards corresponding to resolved jiras. 
 
 
 ## Optimal workflow for contributor
@@ -100,3 +111,12 @@ Another general assumption is that jira summary is the symptom of the problem. r
 Once you see that your review request is approved, you can do `rbt-jira submit-patch`. You can use this command also when you have made a very small change and directly want to submit patch to jira. 
 
 For both of the commands, all changes you intend to send across must be committed. 
+
+
+## Workflow for committer
+have apache's remote cloned separately. To commit, just do 
+
+    rbt-jira.py commit -j jira-id
+
+Everything else will be picked. 
+
