@@ -69,7 +69,8 @@ class ReviewPoster:
             self.attach_patch_in_jira(st, diff_str, "Small enough diff. Attaching directly")
         else:
             review_request = self.client.rb_client.get_review_request(review_request_id=self.opt.reviewboard)
-            if not [review['ship_it'] for review in review_request.get_reviews() if review['ship_it']]:
+            if self.opt.require_ship_it and (
+                    not [review['ship_it'] for review in review_request.get_reviews() if review['ship_it']]):
                 print "No Ship it! Reviews on the review request: " + review_request.absolute_url + ". Hence exiting."
                 sys.exit(1)
             diffs = review_request.get_diffs()

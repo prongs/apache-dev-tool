@@ -31,12 +31,11 @@ import sys
 from commands import *
 
 import argparse
-from cleaner import Cleaner
 
+from cleaner import Cleaner
 from clients import RBTJIRAClient
 from commit import Committer
 from post_review import ReviewPoster
-
 
 possible_options = ['post-review', 'clean', 'submit-patch', 'commit']
 
@@ -52,7 +51,8 @@ def Option(s):
 def main():
     ''' main(), shut up, pylint '''
     popt = argparse.ArgumentParser(description='rbt jira command line tool')
-    popt.add_argument('action', nargs='?', action="store", help="action of the command. One of post-review, submit-patch, commit and clean")
+    popt.add_argument('action', nargs='?', action="store", help="action of the command. One of post-review, "
+                                                                "submit-patch, commit and clean")
     popt.add_argument('-j', '--jira', action='store', dest='jira', required=False,
                       help='JIRAs. ',
                       default=[getoutput("git rev-parse --abbrev-ref HEAD")], nargs="*")
@@ -69,7 +69,7 @@ def main():
     popt.add_argument('-t', '--testing-done', action='store', dest='testing_done', required=False,
                       help='Text for the Testing Done section of the reviewboard')
     popt.add_argument('-ta', '--testing-done-append', action='store', dest='testing_done_append', required=False,
-                      help='Text to append to Testing Done section of the reviewboard', nargs = "*")
+                      help='Text to append to Testing Done section of the reviewboard', nargs="*")
     popt.add_argument('-c', '--comment', action='store', dest='comment', required=False,
                       help='What to comment on jira')
     popt.add_argument('-ch', '--choose-patch', action='store_true', dest='choose_patch', required=False,
@@ -78,6 +78,8 @@ def main():
                       help='Whether to make the review request public', default=False)
     popt.add_argument('-o', '--open', action='store_true', dest='open', required=False,
                       help='Whether to open the review request in browser', default=False)
+    popt.add_argument('-rs', '--require-ship-it', action='store_true', dest='require_ship_it', required=False,
+                      help='Whether to require Ship It! review before posting patch from rb to jira', default=False)
     opt = popt.parse_args()
 
     client = RBTJIRAClient()
@@ -93,30 +95,9 @@ def main():
             review_poster.submit_patch()
     elif opt.action == 'commit':
         Committer(client, opt).commit()
-    elif opt.action == "submit-patch":
-        # PatchProvider(client, opt).provide_patch()
-        pass
     elif opt.action == "clean":
         Cleaner(client).clean()
-        # Cleaner().clean()
-        # print 'Creating diff against', opt.branch, 'and uploading patch to JIRA', opt.jira
-        # jira = get_jira()
-        # issue = jira.issue(opt.jira)
-        # attachment = open(patch_file)
-        # jira.add_attachment(issue, attachment)
-        # attachment.close()
-        #
-        # comment = "Created reviewboard "
-        # if not opt.reviewboard:
-        # print 'Created a new reviewboard ', rb_url
-        # else:
-        # print 'Updated reviewboard', opt.reviewboard
-        # comment = "Updated reviewboard "
-        #
-        # comment = comment + rb_url
-        # jira.add_comment(opt.jira, comment)
 
 
 if __name__ == '__main__':
     sys.exit(main())
-
