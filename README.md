@@ -23,16 +23,17 @@ Go to your project's directory. e.g. I'm using it to work on `apache incubator l
     TARGET_GROUPS = 'lens'
     GUESS_FIELDS = True
 
-I'll assume you are using reviewboard(of course) and can understand what the above lines mean. So just change them accordingly. 
+I'll assume you are using reviewboard(of course) and can understand what the above lines mean. So just change them accordingly.
+I can give two examples: [lens](https://github.com/apache/incubator-lens/blob/master/.reviewboardrc) and [hive](https://github.com/apache/hive/blob/master/.reviewboardrc)
+`TRACKING_BRANCH` can also be used in place of `BRANCH`
 
 This is what help for the command shows:
 
-      $ python /path/to/clone/of/rbt-jira -h
       usage: rbt-jira.py [-h] [-j [JIRA [JIRA ...]]] [-b BRANCH] [-s SUMMARY]
                    [-m COMMIT_MESSAGE] [-d DESCRIPTION] [-r REVIEWBOARD]
                    [-t TESTING_DONE]
-                   [-ta [TESTING_DONE_APPEND [TESTING_DONE_APPEND ...]]]
-                   [-c COMMENT] [-ch] [-p] [-o]
+                   [-ta [TESTING_DONE_APPEND [TESTING_DONE_APPEND ...]]] [-ch]
+                   [-p] [-o] [-rs]
                    [action]
 
         rbt jira command line tool
@@ -44,27 +45,38 @@ This is what help for the command shows:
         optional arguments:
           -h, --help            show this help message and exit
           -j [JIRA [JIRA ...]], --jira [JIRA [JIRA ...]]
-                                JIRAs.
+                                JIRAs. provide as -j JIRA1 -j JIRA2... Mostly only one
+                                option will be used, commit commandcan provide
+                                multiple jira ids and commit all of them together.
           -b BRANCH, --branch BRANCH
-                                Tracking branch to create diff against
+                                Tracking branch to create diff against. Picks default
+                                from .reviewboardrc file
           -s SUMMARY, --summary SUMMARY
-                                Summary for the reviewboard
+                                Summary for the reviewboard. If not provided, jira
+                                summary will be picked.
           -m COMMIT_MESSAGE, --commit-message COMMIT_MESSAGE
-                                Commit Message
+                                Commit Message. If not provided, reviewboard summary
+                                or jira summary -- whichever exists -- will be picked
           -d DESCRIPTION, --description DESCRIPTION
-                                Description for reviewboard
+                                Description for reviewboard. Defaults to description
+                                on jira.
           -r REVIEWBOARD, --rb REVIEWBOARD
-                                Review board that needs to be updated
+                                Review board that needs to be updated. Only needed if
+                                you haven't created rb entry using this tool.
           -t TESTING_DONE, --testing-done TESTING_DONE
-                                Text for the Testing Done section of the reviewboard
+                                Text for the Testing Done section of the reviewboard.
+                                Defaults to empty string.
           -ta [TESTING_DONE_APPEND [TESTING_DONE_APPEND ...]], --testing-done-append [TESTING_DONE_APPEND [TESTING_DONE_APPEND ...]]
                                 Text to append to Testing Done section of the
-                                reviewboard
-          -c COMMENT, --comment COMMENT
-                                What to comment on jira
-          -ch, --choose-patch   Whether Ask for which patch to commit.
+                                reviewboard. Used to provide new testing done in
+                                addition to old one already mentioned on rb
+          -ch, --choose-patch   Whether Ask for which patch to commit. By default the
+                                latest uploaded patch is picked for committing.
           -p, --publish         Whether to make the review request public
           -o, --open            Whether to open the review request in browser
+          -rs, --require-ship-it
+                                Whether to require Ship It! review before posting
+                                patch from rb to jira. True by default
         
         
 `action` can be `post-review`, `submit-patch`, `commit`, `clean`.
@@ -118,5 +130,12 @@ have apache's remote cloned separately. To commit, just do
 
     rbt-jira.py commit -j jira-id
 
-Everything else will be picked. 
+The commit message will be picked for you from reviewboard summary or jira summary whichever exists first. The tool 
+first commits and then issues a amend commit command which will let you modify the commit message. You can commit 
+multiple jiras at once too. 
+    
+    rbt-jira.py commit -j jira-id1 -j jira-id2 ...
+
+The jiras need to be `patch-available` to be eligible for committing. The patches will be picked, committed one by one, 
+pushed to remote. Also the jiras will be marked resolved with a comment thanking the assignee(if the assignee is not you)
 
