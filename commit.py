@@ -1,7 +1,7 @@
 import os
 import sys
 from commands import getoutput
-
+import tempfile
 from bs4 import BeautifulSoup
 import requests
 
@@ -64,6 +64,13 @@ class Committer:
                 jira_diff = requests.get(chosen_attachment.url).text
                 if rb_diff.strip() != jira_diff.strip():
                     print "reviewboard diff and chosen diff are different"
+                    rb_diff_file_path = tempfile.mktemp()
+                    jira_diff_file_path = tempfile.mktemp()
+                    with open(rb_diff_file_path, 'w') as rb_diff_file:
+                        rb_diff_file.write(rb_diff)
+                    with open(jira_diff_file_path, 'w') as jira_diff_file:
+                        jira_diff_file.write(jira_diff)
+                    os.system("vimdiff %s %s" % (rb_diff_file_path, jira_diff_file_path))
                     sys.exit(1)
             status = os.system("curl " + chosen_attachment.url + " | git apply")
             if status != 0:
