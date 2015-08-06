@@ -2,6 +2,7 @@ import os
 import sys
 from commands import getoutput
 import tempfile
+
 from bs4 import BeautifulSoup
 import requests
 
@@ -74,9 +75,14 @@ class Committer:
                     sys.exit(1)
             status = os.system("curl " + chosen_attachment.url + " | git apply")
             if status != 0:
-                "Patch Doesn't cleanly apply."
+                transitions = [transition for transition in self.client.jira_client.transitions(issue) if
+                               transition['name'] == 'Cancel Patch']
+                if not transitions:
+                    print "No transitions to cancel patch"
+                    sys.exit(1)
                 self.client.jira_client.add_comment(issue,
                                                     "Patch doesn't cleanly apply. Please sync with latest and update")
+                self.client.jira_client.transition_issue(issue, transitions[0]['id'])
                 sys.exit(status)
             os.system("git add --all .")
             message = self.opt.commit_message or message
