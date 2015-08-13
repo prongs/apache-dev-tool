@@ -15,7 +15,7 @@ class PatchTester:
         if status != 0:
             return status
         # status, output = commands.getstatusoutput("mvn clean install")
-        command = "mvn clean install -DskipTests -DskipCheck"
+        command = "ls"
         status = os.system(command)
         comment = "Command: " + command + " +in Pre Commit Build " + (
             "Succeeded" if status == 0 else "Failed") + " " + os.getenv("BUILD_URL", "")

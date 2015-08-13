@@ -25,9 +25,9 @@ class Attachment:
 
 class RBTJIRAClient:
     def __init__(self, opt):
+        self.opt = opt
         self.jira_to_rbt_map = self.load_jira_to_rbt_map()
         self.jira_client = self.get_jira_client()
-        self.opt = opt
 
     def get_post_review_dir(self):
         rbt_jira_dir = os.path.join(os.getenv('HOME'), ".rbt-jira")
