@@ -4,7 +4,6 @@ import pickle
 
 from bs4 import BeautifulSoup
 from jira.client import JIRA
-from rbtools.api.client import RBClient
 import requests
 
 
@@ -123,6 +122,7 @@ class RBTJIRAClient:
 
     def get_rb_client(self):
         if not self.rb_client:
+            from rbtools.api.client import RBClient
             options = {}
             with open(".reviewboardrc") as reviewboardrc:
                 for line in reviewboardrc:
