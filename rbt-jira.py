@@ -31,11 +31,13 @@ import sys
 from commands import *
 
 import argparse
+import argcomplete
 
 from cleaner import Cleaner
 from clients import RBTJIRAClient
 from commit import Committer
 from post_review import ReviewPoster
+from test_patch import PatchTester
 
 possible_options = ['post-review', 'clean', 'submit-patch', 'commit']
 
@@ -51,12 +53,17 @@ def Option(s):
 def main():
     ''' main(), shut up, pylint '''
     popt = argparse.ArgumentParser(description='rbt jira command line tool')
+    argcomplete.autocomplete(popt)
     popt.add_argument('action', nargs='?', action="store", help="action of the command. One of post-review, "
                                                                 "submit-patch, commit and clean")
     popt.add_argument('-j', '--jira', action='store', dest='jira', required=False,
                       help='JIRAs. provide as -j JIRA1 -j JIRA2... Mostly only one option will be used, commit command'
                            'can provide multiple jira ids and commit all of them together.',
                       default=[getoutput("git rev-parse --abbrev-ref HEAD")], nargs="*")
+    popt.add_argument('-ju', '--jira-username', action='store', dest='jira_username', required=False,
+                      help='JIRA Username')
+    popt.add_argument('-jp', '--jira-password', action='store', dest='jira_password', required=False,
+                      help='JIRA Password')
     popt.add_argument('-b', '--branch', action='store', dest='branch', required=False,
                       help='Tracking branch to create diff against. Picks default from .reviewboardrc file')
     popt.add_argument('-s', '--summary', action='store', dest='summary', required=False,
@@ -86,21 +93,28 @@ def main():
                       , default=True)
     opt = popt.parse_args()
 
-    client = RBTJIRAClient()
-    if opt.action in ['post-review', 'submit-patch']:
+    client = RBTJIRAClient(opt)
+
+    def validate_single_jira_provided():
         if len(opt.jira) != 1:
             print "Please supply exactly one jira for", opt.action
             sys.exit(1)
-        client.valid_jira(opt.jira[0])
+        opt.jira = opt.jira[0].upper()
+        client.valid_jira(opt.jira)
+    if opt.action in ['post-review', 'submit-patch']:
+        validate_single_jira_provided()
         review_poster = ReviewPoster(client, opt)
         if opt.action == 'post-review':
             review_poster.post_review()
         else:
             review_poster.submit_patch()
+    elif opt.action == 'test-patch':
+        validate_single_jira_provided()
+        return PatchTester(client, opt).test_patch()
     elif opt.action == 'commit':
-        Committer(client, opt).commit()
+        return Committer(client, opt).commit()
     elif opt.action == "clean":
-        Cleaner(client).clean()
+        return Cleaner(client).clean()
 
 
 if __name__ == '__main__':

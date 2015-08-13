@@ -11,7 +11,6 @@ class ReviewPoster:
     def __init__(self, client, opt):
         self.client = client
         self.opt = opt
-        self.opt.jira = self.opt.jira[0].upper()
         self.issue = self.client.jira_client.issue(self.opt.jira)
         self.opt.reviewboard = self.opt.reviewboard or self.client.get_rb_for_jira(self.opt.jira)
         self.opt.branch = self.opt.branch or self.client.branch
@@ -81,7 +80,7 @@ class ReviewPoster:
         if len(data.strip()) == 0:
             print "No diff"
             sys.exit(2)
-        patch_file_path = tempfile.gettempdir() + "/" + self.opt.jira + '_' + str(file_suffix) + '.patch'
+        patch_file_path = tempfile.gettempdir() + "/" + self.opt.jira + '.' + str(file_suffix) + '.patch'
         with open(patch_file_path, 'w') as patch_file:
             print >> patch_file, data
         print "patch file at: ", patch_file_path

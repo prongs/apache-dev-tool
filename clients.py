@@ -2,15 +2,33 @@ from getpass import getpass
 import os
 import pickle
 
+from bs4 import BeautifulSoup
 from jira.client import JIRA
 from rbtools.api.client import RBClient
+import requests
+
+
+class Attachment:
+    def __init__(self, title, url, timestamp):
+        self.title = title
+        self.url = url
+        self.timestamp = timestamp
+
+    def __repr__(self):
+        return self.title + "(" + self.timestamp + "): " + self.url
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __cmp__(self, other):
+        return cmp(self.timestamp, other.timestamp)
 
 
 class RBTJIRAClient:
-    def __init__(self):
+    def __init__(self, opt):
         self.jira_to_rbt_map = self.load_jira_to_rbt_map()
         self.jira_client = self.get_jira_client()
-        self.rb_client = self.get_rb_client().get_root()
+        self.opt = opt
 
     def get_post_review_dir(self):
         rbt_jira_dir = os.path.join(os.getenv('HOME'), ".rbt-jira")
@@ -62,7 +80,7 @@ class RBTJIRAClient:
             review_requests = []
             for id in rb_ids:
                 try:
-                    review_request = self.rb_client.get_review_request(review_request_id=id)
+                    review_request = self.get_rb_client().get_review_request(review_request_id=id)
                     if review_request.status in ['pending'] and (
                                     jira in review_request.bugs_closed or review_request.summary.find(jira) >= 0):
                         review_requests.append(review_request)
@@ -96,35 +114,55 @@ class RBTJIRAClient:
                         return jira
                 except:
                     pass
-        username = raw_input("Enter JIRA Username: ")
-        password = getpass("Enter password: ")
+        username = self.opt.jira_username or raw_input("Enter JIRA Username: ")
+        password = self.opt.jira_password or getpass("Enter password: ")
         jira = JIRA(options, basic_auth=(username, password))
         with open(jira_path, 'wb') as jira_file:
             pickle.dump(jira, jira_file)
         return jira
 
-
     def get_rb_client(self):
-        options = {}
-        with open(".reviewboardrc") as reviewboardrc:
-            for line in reviewboardrc:
-                if line.startswith("#"):
-                    continue
-                if len(line.strip()) == 0:
-                    continue
-                k, v = line.strip().split("=")
-                k = k.strip()
-                v = eval(v.strip())
-                options[k] = v
-        rbclient = RBClient(options['REVIEWBOARD_URL'])
-        self.repository = options['REPOSITORY']
-        self.branch = options.get('BRANCH') or options.get('TRACKING_BRANCH')
-        self.target_groups = None
-        if options.has_key('TARGET_GROUPS'):
-            self.target_groups = options['TARGET_GROUPS']
-        if rbclient.get_root().get_session()['authenticated']:
-            return rbclient
-        username = raw_input("Enter review board Username: ")
-        password = getpass("Enter password: ")
-        rbclient.login(username, password)
-        return rbclient
+        if not self.rb_client:
+            options = {}
+            with open(".reviewboardrc") as reviewboardrc:
+                for line in reviewboardrc:
+                    if line.startswith("#"):
+                        continue
+                    if len(line.strip()) == 0:
+                        continue
+                    k, v = line.strip().split("=")
+                    k = k.strip()
+                    v = eval(v.strip())
+                    options[k] = v
+            rbclient = RBClient(options['REVIEWBOARD_URL'])
+            self.repository = options['REPOSITORY']
+            self.branch = options.get('BRANCH') or options.get('TRACKING_BRANCH')
+            self.target_groups = None
+            if options.has_key('TARGET_GROUPS'):
+                self.target_groups = options['TARGET_GROUPS']
+            if rbclient.get_root().get_session()['authenticated']:
+                return rbclient
+            username = raw_input("Enter review board Username: ")
+            password = getpass("Enter password: ")
+            rbclient.login(username, password)
+            self.rb_client = rbclient.get_root()
+        return self.rb_client
+
+    def get_latest_attachment(self, issue, choose_patch=False):
+        attachments = []
+        url = self.jira_client._options['server'] + "/browse/" + issue.key
+        bs = BeautifulSoup(requests.get(url).text)
+        for li in bs.find(id="attachmentmodule").find(id="file_attachments").find_all('li'):
+            a = li.find("dt").find('a')
+            attachment_link = a['data-downloadurl'][a['data-downloadurl'].find('http'):]
+            title = a.contents[0].strip()
+            upload_time = li.find("dd", {'class': 'attachment-date'}).find('time')['datetime']
+            attachments.append(Attachment(title, attachment_link, upload_time))
+        attachments.sort()
+        chosen_attachment = attachments[-1]
+        if choose_patch:
+            print "The following patches are available. Pick which one you want to commit: "
+            for i, attachment in enumerate(attachments):
+                print "%d: %s" % (i, attachment)
+            chosen_attachment = attachments[input("Enter the number corresponding to the desired patch: ")]
+        return chosen_attachment

@@ -3,24 +3,7 @@ import sys
 from commands import getoutput
 import tempfile
 
-from bs4 import BeautifulSoup
 import requests
-
-
-class Attachment:
-    def __init__(self, title, url, timestamp):
-        self.title = title
-        self.url = url
-        self.timestamp = timestamp
-
-    def __repr__(self):
-        return self.title + "(" + self.timestamp + "): " + self.url
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __cmp__(self, other):
-        return cmp(self.timestamp, other.timestamp)
 
 
 class Committer:
@@ -38,22 +21,7 @@ class Committer:
         os.system("git checkout " + self.branch)
         os.system("git pull origin " + self.branch)
         for issue in self.issues:
-            url = self.client.jira_client._options['server'] + "/browse/" + issue.key
-            bs = BeautifulSoup(requests.get(url).text)
-            attachments = []
-            for li in bs.find(id="attachmentmodule").find(id="file_attachments").find_all('li'):
-                a = li.find("dt").find('a')
-                attachment_link = a['data-downloadurl'][a['data-downloadurl'].find('http'):]
-                title = a.contents[0].strip()
-                upload_time = li.find("dd", {'class': 'attachment-date'}).find('time')['datetime']
-                attachments.append(Attachment(title, attachment_link, upload_time))
-            attachments.sort()
-            chosen_attachment = attachments[-1]
-            if self.opt.choose_patch:
-                print "The following patches are available. Pick which one you want to commit: "
-                for i, attachment in enumerate(attachments):
-                    print "%d: %s" % (i, attachment)
-                chosen_attachment = attachments[input("Enter the number corresponding to the desired patch: ")]
+            chosen_attachment = self.client.get_latest_attachment(issue, self.opt.choose_patch)
             email = issue.fields.assignee.emailAddress.replace(' at ', '@').replace(' dot ', '.')
             name = issue.fields.assignee.displayName
             message = issue.fields.summary
@@ -72,7 +40,8 @@ class Committer:
                     with open(jira_diff_file_path, 'w') as jira_diff_file:
                         jira_diff_file.write(jira_diff)
                     os.system("vimdiff %s %s" % (rb_diff_file_path, jira_diff_file_path))
-                    sys.exit(1)
+                    if raw_input("Do you still want to commit patch attached in jira? [Y/N]").upper() == 'N':
+                        sys.exit(1)
             status = os.system("curl " + chosen_attachment.url + " | git apply")
             if status != 0:
                 transitions = [transition for transition in self.client.jira_client.transitions(issue) if
