@@ -17,6 +17,6 @@ class PatchTester:
         # status, output = commands.getstatusoutput("mvn clean install")
         command = "ls"
         status = os.system(command)
-        comment = "Command: " + command + " +in Pre Commit Build " + (
+        comment = "Command: " + command + " in Pre Commit Build " + (
             "Succeeded" if status == 0 else "Failed") + " " + os.getenv("BUILD_URL", "")
         self.client.jira_client.add_comment(self.issue, comment.strip())
