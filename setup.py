@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-with open("requirements.txt") as requirements_file:
+with open("./requirements.txt") as requirements_file:
     requirements = requirements_file.read().strip().split("\n")
 setup(
     name='apache_dev_tool',
