@@ -8,7 +8,7 @@ setup(
     author='Rajat Khandelwal',
     author_email='rajatgupta59@gmail.com',
     url='https://github.com/prongs/apache_dev_tool',  # use the URL to the github repo
-    download_url='https://github.com/prongs/apache_dev_tool/tarball/0.1',  # I'll explain this in a second
+    download_url='https://github.com/prongs/apache-dev-tool/tarball/0.1',  # I'll explain this in a second
     keywords=['apache', 'open-source', 'reviewboard', 'jira', 'test-patch'],  # arbitrary keywords
     classifiers=[],
     install_requires=[
