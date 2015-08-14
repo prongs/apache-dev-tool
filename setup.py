@@ -1,8 +1,8 @@
 from distutils.core import setup
 
 setup(
-    name='apache-dev-tool',
-    packages=['apache-dev-tool'],  # this must be the same as the name above
+    name='apache_dev_tool',
+    packages=['apache_dev_tool'],  # this must be the same as the name above
     version='0.0.3',
     description='Tool for apache contributors and committers.',
     author='Rajat Khandelwal',
