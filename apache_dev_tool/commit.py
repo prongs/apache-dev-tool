@@ -27,7 +27,7 @@ class Committer:
             message = issue.fields.summary
             rb_id = self.client.get_rb_for_jira(issue.key)
             if rb_id:
-                review_request = self.client.rb_client.get_review_request(review_request_id=rb_id)
+                review_request = self.client.get_rb_client().get_review_request(review_request_id=rb_id)
                 message = review_request.summary
                 rb_diff = review_request.get_diffs()[-1].get_patch().data
                 jira_diff = requests.get(chosen_attachment.url).text
@@ -54,7 +54,6 @@ class Committer:
                 self.client.jira_client.transition_issue(issue, transitions[0]['id'])
                 sys.exit(status)
             os.system("git add --all .")
-            message = self.opt.commit_message or message
             if message.find(issue.key) == -1:
                 message = issue.key + ": " + message
             cmd = 'git commit --author "%s <%s>" -m "%s" ' % (name, email, message.replace('"', '\\"'))

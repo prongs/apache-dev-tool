@@ -13,13 +13,13 @@ class ReviewPoster:
         self.opt = opt
         self.issue = self.client.jira_client.issue(self.opt.jira)
         self.opt.reviewboard = self.opt.reviewboard or self.client.get_rb_for_jira(self.opt.jira)
-        self.opt.branch = self.opt.branch or self.client.branch
+        self.opt.branch = self.opt.branch or self.client.get_branch()
 
     def post_review(self):
         if self.opt.reviewboard:
-            review_request = self.client.rb_client.get_review_request(review_request_id=self.opt.reviewboard)
+            review_request = self.client.get_rb_client().get_review_request(review_request_id=self.opt.reviewboard)
         else:
-            review_request = self.client.rb_client.get_review_requests().create(repository=self.client.repository)
+            review_request = self.client.get_rb_client().get_review_requests().create(repository=self.client.repository)
         os.system("git remote update")
         os.system("git merge " + self.opt.branch)
         os.system("git mergetool")
@@ -67,7 +67,7 @@ class ReviewPoster:
             st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H:%M:%S')
             self.attach_patch_in_jira(st, diff_str, "Small enough diff. Attaching directly")
         else:
-            review_request = self.client.rb_client.get_review_request(review_request_id=self.opt.reviewboard)
+            review_request = self.client.get_rb_client().get_review_request(review_request_id=self.opt.reviewboard)
             if self.opt.require_ship_it and (
                     not [review['ship_it'] for review in review_request.get_reviews() if review['ship_it']]):
                 print "No Ship it! Reviews on the review request: " + review_request.absolute_url + ". Hence exiting."

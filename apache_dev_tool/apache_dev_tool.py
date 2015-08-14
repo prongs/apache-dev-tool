@@ -31,8 +31,6 @@ import sys
 from commands import *
 
 import argparse
-import argcomplete
-
 from cleaner import Cleaner
 from clients import RBTJIRAClient
 from commit import Committer
@@ -52,8 +50,7 @@ def Option(s):
 
 def main():
     ''' main(), shut up, pylint '''
-    popt = argparse.ArgumentParser(description='rbt jira command line tool')
-    argcomplete.autocomplete(popt)
+    popt = argparse.ArgumentParser(description='apache dev tool. Command line helper for frequent actions.')
     popt.add_argument('action', nargs='?', action="store", help="action of the command. One of post-review, "
                                                                 "submit-patch, commit and clean")
     popt.add_argument('-j', '--jira', action='store', dest='jira', required=False,
@@ -61,16 +58,17 @@ def main():
                            'can provide multiple jira ids and commit all of them together.',
                       default=[getoutput("git rev-parse --abbrev-ref HEAD")], nargs="*")
     popt.add_argument('-ju', '--jira-username', action='store', dest='jira_username', required=False,
-                      help='JIRA Username')
+                      help='JIRA Username. If not provided, it will prompt and ask the user.')
     popt.add_argument('-jp', '--jira-password', action='store', dest='jira_password', required=False,
-                      help='JIRA Password')
+                      help='JIRA Password. If not provided, it will prompt and ask the user.')
+    popt.add_argument('-ru', '--reviewboard-username', action='store', dest='reviewboard_username', required=False,
+                      help='Review Board Username. If not provided, it will prompt and ask the user.')
+    popt.add_argument('-rp', '--reviewboard-password', action='store', dest='reviewboard_password', required=False,
+                      help='Review Board Password. If not provided, it will prompt and ask the user.')
     popt.add_argument('-b', '--branch', action='store', dest='branch', required=False,
                       help='Tracking branch to create diff against. Picks default from .reviewboardrc file')
     popt.add_argument('-s', '--summary', action='store', dest='summary', required=False,
                       help='Summary for the reviewboard. If not provided, jira summary will be picked. ')
-    popt.add_argument('-m', '--commit-message', action='store', dest='commit_message', required=False,
-                      help='Commit Message. If not provided, reviewboard summary or jira summary -- whichever exists --'
-                           ' will be picked')
     popt.add_argument('-d', '--description', action='store', dest='description', required=False,
                       help='Description for reviewboard. Defaults to description on jira. ')
     popt.add_argument('-r', '--rb', action='store', dest='reviewboard', required=False,
@@ -101,6 +99,7 @@ def main():
             sys.exit(1)
         opt.jira = opt.jira[0].upper()
         client.valid_jira(opt.jira)
+
     if opt.action in ['post-review', 'submit-patch']:
         validate_single_jira_provided()
         review_poster = ReviewPoster(client, opt)
@@ -115,6 +114,10 @@ def main():
         return Committer(client, opt).commit()
     elif opt.action == "clean":
         return Cleaner(client).clean()
+    else:
+        print "Provided action not supported, you provided: ", opt.action
+        print "Provide --help option to understand usage"
+        return 1
 
 
 if __name__ == '__main__':

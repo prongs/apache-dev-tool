@@ -1,7 +1,7 @@
 from getpass import getpass
 import os
 import pickle
-
+from rbtools.api.client import RBClient
 from bs4 import BeautifulSoup
 from jira.client import JIRA
 import requests
@@ -28,6 +28,7 @@ class RBTJIRAClient:
         self.opt = opt
         self.jira_to_rbt_map = self.load_jira_to_rbt_map()
         self.jira_client = self.get_jira_client()
+        self.rb_client = None
 
     def get_post_review_dir(self):
         rbt_jira_dir = os.path.join(os.getenv('HOME'), ".rbt-jira")
@@ -122,7 +123,6 @@ class RBTJIRAClient:
 
     def get_rb_client(self):
         if not self.rb_client:
-            from rbtools.api.client import RBClient
             options = {}
             with open(".reviewboardrc") as reviewboardrc:
                 for line in reviewboardrc:
@@ -141,12 +141,16 @@ class RBTJIRAClient:
             if options.has_key('TARGET_GROUPS'):
                 self.target_groups = options['TARGET_GROUPS']
             if rbclient.get_root().get_session()['authenticated']:
-                return rbclient
-            username = raw_input("Enter review board Username: ")
-            password = getpass("Enter password: ")
+                return rbclient.get_root()
+            username = self.opt.reviewboard_username or raw_input("Enter review board Username: ")
+            password = self.opt.reviewboard_password or getpass("Enter password: ")
             rbclient.login(username, password)
             self.rb_client = rbclient.get_root()
         return self.rb_client
+
+    def get_branch(self):
+        self.get_rb_client()
+        return self.branch
 
     def get_latest_attachment(self, issue, choose_patch=False):
         attachments = []

@@ -1,21 +1,15 @@
-# rbt-jira
-integrating reviewboard and jira
+# apache-dev-tool 
+Dev tool for Apache Contributors. Provides helpful scripts for review request, jira, and jenkins
 
 ## Installation
-Just do a git clone. If you want to help in development, first fork and clone your own fork. :) 
+You can install like this:
 
-## Required packages and their installation
-rbt-jira is a written in python and requires python runtime to work. The recommended version is 2.7. Other than the bare-minimum installation of python, it requires a couple of packages to be installed: `argparse`, `rbtools`, `jira`
+    pip install apache-dev-tool --allow-external RBTools
 
-So for the uninitiated, the recommended way of installing python packages is `pip`. If you don't have `pip`, please install it. `pip` can be installed by `easy_install`(easy_install pip). If you don't even have `easy_install`  , then install [setuptools](https://pypi.python.org/pypi/setuptools). For installing setuptools, download the tarball, extract, go in the directory and do `python setup.py install`. Ultimately, you'll have `pip`, and you can do the following:
-
-    pip install argparse rbtools jira # might have to do sudo
-  
-After installations, you should be ready to use the program.
-
+If you want to help in development, clone from [github](https://github.com/prongs/apache-dev-tool)
 
 ## Usage
-Go to your project's directory. e.g. I'm using it to work on `apache incubator lens`, so I'll do `cd /path/to/clone/of/incubator-lens`. I've already cloned `rbt-jira` on my system in path `/path/to/clone/of/rbt-jira`. I'll make sure I have the following things inside `/path/to/clone/of/incubator-lens/.reviewboardrc`:
+Go to your project's directory. e.g. I'm using it to work on `apache incubator lens`, so I'll do `cd /path/to/clone/of/incubator-lens`. I've already installed `apache-dev-tool`. I'll make sure I have the following things inside `/path/to/clone/of/incubator-lens/.reviewboardrc`:
     
     REVIEWBOARD_URL = "https://reviews.apache.org/"
     REPOSITORY = "lens"
@@ -29,14 +23,16 @@ I can give two examples: [lens](https://github.com/apache/incubator-lens/blob/ma
 
 This is what help for the command shows:
 
-      usage: rbt-jira.py [-h] [-j [JIRA [JIRA ...]]] [-b BRANCH] [-s SUMMARY]
-                   [-m COMMIT_MESSAGE] [-d DESCRIPTION] [-r REVIEWBOARD]
-                   [-t TESTING_DONE]
-                   [-ta [TESTING_DONE_APPEND [TESTING_DONE_APPEND ...]]] [-ch]
-                   [-p] [-o] [-rs]
-                   [action]
-
-        rbt jira command line tool
+        $ apache-dev-tool --help
+        usage: apache-dev-tool [-h] [-j [JIRA [JIRA ...]]] [-ju JIRA_USERNAME]
+                               [-jp JIRA_PASSWORD] [-ru REVIEWBOARD_USERNAME]
+                               [-rp REVIEWBOARD_PASSWORD] [-b BRANCH] [-s SUMMARY]
+                               [-d DESCRIPTION] [-r REVIEWBOARD] [-t TESTING_DONE]
+                               [-ta [TESTING_DONE_APPEND [TESTING_DONE_APPEND ...]]]
+                               [-ch] [-p] [-o] [-rs]
+                               [action]
+        
+        apache dev tool. Command line helper for frequent actions.
         
         positional arguments:
           action                action of the command. One of post-review, submit-
@@ -48,15 +44,24 @@ This is what help for the command shows:
                                 JIRAs. provide as -j JIRA1 -j JIRA2... Mostly only one
                                 option will be used, commit commandcan provide
                                 multiple jira ids and commit all of them together.
+          -ju JIRA_USERNAME, --jira-username JIRA_USERNAME
+                                JIRA Username. If not provided, it will prompt and ask
+                                the user.
+          -jp JIRA_PASSWORD, --jira-password JIRA_PASSWORD
+                                JIRA Password. If not provided, it will prompt and ask
+                                the user.
+          -ru REVIEWBOARD_USERNAME, --reviewboard-username REVIEWBOARD_USERNAME
+                                Review Board Username. If not provided, it will prompt
+                                and ask the user.
+          -rp REVIEWBOARD_PASSWORD, --reviewboard-password REVIEWBOARD_PASSWORD
+                                Review Board Password. If not provided, it will prompt
+                                and ask the user.
           -b BRANCH, --branch BRANCH
                                 Tracking branch to create diff against. Picks default
                                 from .reviewboardrc file
           -s SUMMARY, --summary SUMMARY
                                 Summary for the reviewboard. If not provided, jira
                                 summary will be picked.
-          -m COMMIT_MESSAGE, --commit-message COMMIT_MESSAGE
-                                Commit Message. If not provided, reviewboard summary
-                                or jira summary -- whichever exists -- will be picked
           -d DESCRIPTION, --description DESCRIPTION
                                 Description for reviewboard. Defaults to description
                                 on jira.
@@ -76,10 +81,9 @@ This is what help for the command shows:
           -o, --open            Whether to open the review request in browser
           -rs, --require-ship-it
                                 Whether to require Ship It! review before posting
-                                patch from rb to jira. True by default
+                                patch from rb to jira. True by default.        
         
-        
-`action` can be `post-review`, `submit-patch`, `commit`, `clean`.
+`action` can be `post-review`, `submit-patch`, `test-patch`, `commit`, `clean`,
 
 It's expected that you run the command in the directory that contains `.reviewboardrc`. So I'd run the command inside `/path/to/clone/of/incubator-lens/`.
 
@@ -102,6 +106,10 @@ After it has patch, it adds it to the issue as attachment, marks it patch availa
 
 Just like post-review, it needs `-j` argument, but can deduce from current branch name. 
 
+### Test patch
+Takes latest patch from jira, applies it and runs `mvn clean install`. It's expected that this command takes care of 
+all guidelines and test cases. So it's assumed that `mvn clean install` will only pass when the patch is 
+commitable according to project guidelines. 
 
 ### Commit
 
@@ -114,13 +122,13 @@ Deletes branches for jiras resolved. cleans up local storage. Closes reviewboard
 ## Optimal workflow for contributor
 Keep your `$BRANCH` in sync with apache repo's `$BRANCH`. i.e. do not do any work on that branch. It shouldn't (ideally) matter whether you have forked the repo before cloning or not. Whenever you work on a jira, create a branch with the issue name(e.g. LENS-26) and work on that. 
 
-git commits can be checkpoints(e.g. when you have to switch branch, you'll perform a checkpoint commit). So I've kept `committing` separate from `post-review`. Once you are sure you want to push a review request, do `rbt-jira post-review`. This will create the review request. You can open that, most of the fields will be already set. 
+git commits can be checkpoints(e.g. when you have to switch branch, you'll perform a checkpoint commit). So I've kept `committing` separate from `post-review`. Once you are sure you want to push a review request, do `apache-dev-tool post-review`. This will create the review request. You can open that, most of the fields will be already set. 
 
-Generally when you create a review request, you get to see the diff and you decide some of the changes need rectifying. You will now browse through the diff of your review request (which is not published yet), make changes on your local, and once done, do a `git commit` followed by `rbt-jira post-review -p`. This will publish the request. You can provide `-d`, `-s`, `-t` as and when required. 
+Generally when you create a review request, you get to see the diff and you decide some of the changes need rectifying. You will now browse through the diff of your review request (which is not published yet), make changes on your local, and once done, do a `git commit` followed by `apache-dev-tool post-review -p`. This will publish the request. You can provide `-d`, `-s`, `-t` as and when required. 
 
 Another general assumption is that jira summary is the symptom of the problem. reviewboard summary can mention what is the actual change. So you'll provide summary once (anytime when you are doing post-review) and that will permanently become the summary of the review request.
 
-Once you see that your review request is approved, you can do `rbt-jira submit-patch`. You can use this command also when you have made a very small change and directly want to submit patch to jira. 
+Once you see that your review request is approved, you can do `apache-dev-tool submit-patch`. You can use this command also when you have made a very small change and directly want to submit patch to jira. 
 
 For both of the commands, all changes you intend to send across must be committed. 
 
@@ -128,14 +136,19 @@ For both of the commands, all changes you intend to send across must be committe
 ## Workflow for committer
 have apache's remote cloned separately. To commit, just do 
 
-    rbt-jira.py commit -j jira-id
+    apache-dev-tool commit -j jira-id
 
 The commit message will be picked for you from reviewboard summary or jira summary whichever exists first. The tool 
 first commits and then issues a amend commit command which will let you modify the commit message. You can commit 
 multiple jiras at once too. 
     
-    rbt-jira.py commit -j jira-id1 -j jira-id2 ...
+    apache-dev-tool commit -j jira-id1 -j jira-id2 ...
 
 The jiras need to be `patch-available` to be eligible for committing. The patches will be picked, committed one by one, 
 pushed to remote. Also the jiras will be marked resolved with a comment thanking the assignee(if the assignee is not you)
 
+## Setting up a pre-commit job in apache jenkins
+
+This script has a `test-patch` option which is ideal for a pre-commit job for an apache project. Apache lens is using 
+this for its pre-commit job. See the configuration [here](https://builds.apache.org/view/PreCommit%20Builds/job/PreCommit-lens-Build/configure)
+Look for `execute shell` in the config page. 
