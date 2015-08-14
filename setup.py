@@ -2,13 +2,13 @@ from distutils.core import setup
 
 setup(
     name='apache-dev-tool',
-    packages=['apache_dev_tool'],  # this must be the same as the name above
-    version='0.0.2',
+    packages=['apache-dev-tool'],  # this must be the same as the name above
+    version='0.0.3',
     description='Tool for apache contributors and committers.',
     author='Rajat Khandelwal',
     author_email='rajatgupta59@gmail.com',
     url='https://github.com/prongs/apache_dev_tool',  # use the URL to the github repo
-    download_url='https://github.com/prongs/apache-dev-tool/tarball/0.0.2',  # I'll explain this in a second
+    download_url='https://github.com/prongs/apache-dev-tool/tarball/0.0.3',  # I'll explain this in a second
     keywords=['apache', 'open-source', 'reviewboard', 'jira', 'test-patch'],  # arbitrary keywords
     classifiers=[],
     install_requires=[
