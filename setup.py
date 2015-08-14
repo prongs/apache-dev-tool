@@ -1,7 +1,5 @@
 from distutils.core import setup
 
-with open("./requirements.txt") as requirements_file:
-    requirements = requirements_file.read().strip().split("\n")
 setup(
     name='apache_dev_tool',
     packages=['apache_dev_tool'],  # this must be the same as the name above
@@ -13,8 +11,14 @@ setup(
     download_url='https://github.com/prongs/apache_dev_tool/tarball/0.1',  # I'll explain this in a second
     keywords=['apache', 'open-source', 'reviewboard', 'jira', 'test-patch'],  # arbitrary keywords
     classifiers=[],
-    install_requires=requirements,
-    entry_points = {
+    install_requires=[
+        "argparse>=1.3.0"
+        "jira>=0.47"
+        "beautifulsoup4>=4.3.2"
+        "RBTools>=0.7.4"
+        "requests>=2.7.0"
+    ],
+    entry_points={
         'console_scripts': ['apache-dev-tool=apache_dev_tool.apache_dev_tool:main'],
     }
 )
