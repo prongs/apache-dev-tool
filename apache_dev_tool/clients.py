@@ -67,7 +67,7 @@ class RBTJIRAClient:
         rb_ids = set()
         for comment in rb_comments:
             try:
-                id = comment.body[comment.body.find("reviews.apache.org/r/") + len("reviews.apache.org/r/"):]
+                id = comment.body[comment.body.find("reviews.apache.org/r/") + len("reviews.apache.org/r/"):]+"/"
                 id = id[:id.find('/')]
                 rb_ids.add(int(id))
             except:

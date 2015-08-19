@@ -24,7 +24,7 @@ class ReviewPoster:
         os.system("git merge " + self.opt.branch)
         os.system("git mergetool")
         os.system('git commit -am "merge with ' + self.opt.branch + '"')
-        diff_str = getoutput('git diff --full-index ' + self.opt.branch + "..HEAD") + '\n'
+        diff_str = getoutput('git diff --full-index --binary ' + self.opt.branch + "..HEAD") + '\n'
         review_request.get_diffs().upload_diff(diff_str)
         draft = review_request.get_draft()
         draft_update_args = {"bugs_closed": self.opt.jira}

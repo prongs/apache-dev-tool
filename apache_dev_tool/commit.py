@@ -9,7 +9,7 @@ import requests
 class Committer:
     def __init__(self, client, opt):
         self.client = client
-        self.branch = self.client.branch
+        self.branch = self.client.get_branch()
         self.issues = list(self.client.jira_client.issue(jira) for jira in opt.jira)
         self.opt = opt
         for issue in self.issues:
