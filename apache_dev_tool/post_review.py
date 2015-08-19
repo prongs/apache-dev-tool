@@ -56,7 +56,7 @@ class ReviewPoster:
     def submit_patch(self):
         if not self.opt.reviewboard:
             print "no reviewboard entry found"
-            diff_str = getoutput('git diff --full-index ' + self.opt.branch + "..HEAD")
+            diff_str = getoutput('git diff --full-index --binary ' + self.opt.branch + "..HEAD")
             pluses = diff_str.count('\n+')
             minuses = diff_str.count('\n-')
             if pluses + minuses > 20:

@@ -18,7 +18,7 @@ Go to your project's directory. e.g. I'm using it to work on `apache incubator l
     GUESS_FIELDS = True
 
 I'll assume you are using reviewboard(of course) and can understand what the above lines mean. So just change them accordingly.
-I can give two examples: [lens](https://github.com/apache/incubator-lens/blob/master/.reviewboardrc) and [hive](https://github.com/apache/hive/blob/master/.reviewboardrc)
+I can give two examples: [lens](https://github.com/apache/incubator-lens/blob/master/.reviewboardrc) and [hive](https://github.com/apache/hive/blob/master/.reviewboardrc). 
 `TRACKING_BRANCH` can also be used in place of `BRANCH`
 
 This is what help for the command shows:
@@ -36,7 +36,7 @@ This is what help for the command shows:
         
         positional arguments:
           action                action of the command. One of post-review, submit-
-                                patch, commit and clean
+                                patch, test-patch commit and clean
         
         optional arguments:
           -h, --help            show this help message and exit
