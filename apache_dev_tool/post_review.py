@@ -45,6 +45,7 @@ class ReviewPoster:
         if self.opt.publish:
             draft_update_args['public'] = True
         draft.update(**draft_update_args)
+        self.client.transition_issue(self.issue, 'Start Progress')
         print "created/updated:", review_request.absolute_url
         if self.opt.open:
             webbrowser.open_new_tab(review_request.absolute_url)
@@ -87,13 +88,7 @@ class ReviewPoster:
         if not self.issue.fields.assignee or self.issue.fields.assignee.name != \
                 self.client.jira_client.session()._session.auth[0]:
             self.client.jira_client.assign_issue(self.issue, self.client.jira_client.session()._session.auth[0])
-        transitions = [transition for transition in self.client.jira_client.transitions(self.issue) if
-                       transition['name'] == 'Submit Patch']
-        if not transitions:
-            print "no transitions for submitting patch"
-            sys.exit(2)
-        else:
-            self.client.jira_client.add_attachment(self.issue, patch_file_path)
-            self.client.jira_client.add_comment(self.issue, comment)
-            self.client.jira_client.transition_issue(self.issue, transitions[0]['id'])
-            print "Submitted patch in jira"
+        self.client.transition_issue(self.issue, 'Submit Patch')
+        self.client.jira_client.add_attachment(self.issue, patch_file_path)
+        self.client.jira_client.add_comment(self.issue, comment)
+        print "Submitted patch in jira"

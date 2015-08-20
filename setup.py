@@ -17,7 +17,7 @@ setup(
         "jira>=0.47",
         "beautifulsoup4>=4.3.2",
         "RBTools>=0.7.4",
-        "requests>=2.0.0",
+        "requests>=2.7.0",
     ],
     entry_points={
         'console_scripts': ['apache-dev-tool=apache_dev_tool.apache_dev_tool:main'],
