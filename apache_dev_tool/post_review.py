@@ -27,7 +27,7 @@ class ReviewPoster:
         diff_str = getoutput('git diff --full-index --binary ' + self.opt.branch + "..HEAD") + '\n'
         review_request.get_diffs().upload_diff(diff_str)
         draft = review_request.get_draft()
-        draft_update_args = {"bugs_closed": self.opt.jira}
+        draft_update_args = {"bugs_closed": self.opt.jira, "branch": self.opt.branch}
         if self.client.target_groups:
             draft_update_args['target_groups'] = self.client.target_groups
         draft_update_args['summary'] = self.opt.summary or draft.summary or self.issue.fields.summary

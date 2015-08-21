@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-version = '0.0.7'
+version = '0.0.8'
 setup(
     name='apache_dev_tool',
     packages=['apache_dev_tool'],  # this must be the same as the name above
@@ -8,7 +8,7 @@ setup(
     description='Tool for apache contributors and committers.',
     author='Rajat Khandelwal',
     author_email='rajatgupta59@gmail.com',
-    url='https://github.com/prongs/apache_dev_tool',  # use the URL to the github repo
+    url='https://github.com/prongs/apache-dev-tool',  # use the URL to the github repo
     download_url='https://github.com/prongs/apache-dev-tool/tarball/' + version,  # I'll explain this in a second
     keywords=['apache', 'open-source', 'reviewboard', 'jira', 'test-patch'],  # arbitrary keywords
     classifiers=[],
