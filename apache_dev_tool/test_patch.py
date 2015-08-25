@@ -6,7 +6,7 @@ class PatchTester:
         self.client = client
         self.opt = opt
         self.issue = self.client.jira_client.issue(self.opt.jira)
-        self.opt.branch = self.opt.branch or self.client.branch
+        self.opt.branch = self.opt.branch or self.client.get_branch()
 
     def test_patch(self):
         attachment = self.client.get_latest_attachment(self.issue)

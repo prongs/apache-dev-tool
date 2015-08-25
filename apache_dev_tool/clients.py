@@ -161,7 +161,8 @@ class RBTJIRAClient:
             attachment_link = a['data-downloadurl'][a['data-downloadurl'].find('http'):]
             title = a.contents[0].strip()
             upload_time = li.find("dd", {'class': 'attachment-date'}).find('time')['datetime']
-            attachments.append(Attachment(title, attachment_link, upload_time))
+            if title.split(".")[-1] in ('txt', 'patch') :
+                attachments.append(Attachment(title, attachment_link, upload_time))
         attachments.sort()
         chosen_attachment = attachments[-1]
         if choose_patch:
