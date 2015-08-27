@@ -86,6 +86,8 @@ def main():
                       help='Whether to make the review request public', default=False)
     popt.add_argument('-o', '--open', action='store_true', dest='open', required=False,
                       help='Whether to open the review request in browser', default=False)
+    popt.add_argument('-tpc', '--test-patch-command', action='store', dest='test_patch_command', required=False,
+                      help='Whether to open the review request in browser', default="mvn clean install")
     popt.add_argument('-rs', '--require-ship-it', action='store_true', dest='require_ship_it', required=False,
                       help='Whether to require Ship It! review before posting patch from rb to jira. True by default.'
                       , default=True)

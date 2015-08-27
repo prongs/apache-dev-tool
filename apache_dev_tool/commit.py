@@ -66,16 +66,14 @@ class Committer:
                 print "Commit failed"
                 sys.exit(status)
             os.system("git commit --amend")
-            transitions = [transition for transition in self.client.jira_client.transitions(issue) if
-                           transition['name'] == 'Resolve Issue']
-            if not transitions:
-                print "No transitions for resolve issue"
-                sys.exit(1)
+            if self.fix_version:
+                issue.fields.fixVersions.append(self.fix_version)
+                issue.update(fields={'fixVersions': list(version.raw for version in issue.fields.fixVersions)})
             if issue.fields.assignee.name == self.client.jira_client.session()._session.auth[0]:
                 self.client.jira_client.add_comment(issue, "Committed myself.")
             else:
                 self.client.jira_client.add_comment(issue, "Committed. Thanks [~%s]" % (issue.fields.assignee.name))
-            self.client.jira_client.transition_issue(issue, transitions[0]['id'])
+            self.client.transition_issue(issue, 'Resolve Issue')
         if getoutput("git status").find("nothing to commit, working directory clean") != -1:
             print "Everything committed nicely. Pushing"
             os.system("git push origin " + self.branch)
