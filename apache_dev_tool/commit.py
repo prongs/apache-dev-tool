@@ -1,3 +1,4 @@
+import commands
 import os
 import sys
 from commands import getoutput
@@ -15,6 +16,12 @@ class Committer:
         for issue in self.issues:
             if issue.fields.status.name != 'Patch Available':
                 raise Exception(issue.key + " is not Patch Available. Skipping all")
+        versions = self.client.jira_client.project(self.issues[0].fields.project.id).versions
+        devVersion = commands.getoutput(
+            "mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version|grep -Ev '(^\[|Download\w+:)'")
+        if devVersion.find("SNAPSHOT") == -1:
+            raise Exception("Current branch is not on a snapshot version")
+        self.fix_version = self.guess_version(devVersion, versions)
 
     def commit(self):
         os.system("git reset --hard")
@@ -72,3 +79,12 @@ class Committer:
         if getoutput("git status").find("nothing to commit, working directory clean") != -1:
             print "Everything committed nicely. Pushing"
             os.system("git push origin " + self.branch)
+
+    def guess_version(self, devVersion, versions):
+        candidates = []
+        for version in versions:
+            if devVersion.find(version.name) >= 0:
+                candidates.append(version)
+        if len(candidates) == 1:
+            return candidates[0]
+        return None

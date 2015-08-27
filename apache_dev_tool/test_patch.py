@@ -22,7 +22,7 @@ class PatchTester:
         if status != 0:
             return status
         # status, output = commands.getstatusoutput("mvn clean install")
-        command = "mvn clean install -DskipTests -DskipCheck"
+        command = "mvn clean install"
         status = os.system(command)
         comment = "Applied patch: [%s|%s] and ran command: %s. " \
                   "Result: %s. " \
