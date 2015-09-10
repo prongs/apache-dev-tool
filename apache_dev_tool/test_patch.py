@@ -28,7 +28,7 @@ class PatchTester:
         comment = "Applied patch: [%s|%s] and ran command: %s. " \
                   "Result: %s. " \
                   "Build Job: %s" % (attachment.title, attachment.url, command,
-                                     text_status(status), os.getenv("BUILD_URL", "NO url availavle"))
+                                     text_status(status), os.getenv("BUILD_URL", "No url availavle"))
         self.client.jira_client.add_comment(self.issue, comment.strip())
         print "resetting patch " + str(attachment)
         os.system("git reset --hard")

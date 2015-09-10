@@ -1,6 +1,7 @@
 from getpass import getpass
 import os
 import pickle
+
 from rbtools.api.client import RBClient
 from bs4 import BeautifulSoup
 from jira.client import JIRA
@@ -67,7 +68,7 @@ class RBTJIRAClient:
         rb_ids = set()
         for comment in rb_comments:
             try:
-                id = comment.body[comment.body.find("reviews.apache.org/r/") + len("reviews.apache.org/r/"):]+"/"
+                id = comment.body[comment.body.find("reviews.apache.org/r/") + len("reviews.apache.org/r/"):] + "/"
                 id = id[:id.find('/')]
                 rb_ids.add(int(id))
             except:
@@ -142,8 +143,10 @@ class RBTJIRAClient:
                 self.target_groups = options['TARGET_GROUPS']
             if rbclient.get_root().get_session()['authenticated']:
                 return rbclient.get_root()
-            username = self.opt.reviewboard_username or raw_input("Enter review board Username: ")
-            password = self.opt.reviewboard_password or getpass("Enter password: ")
+            username = self.opt.reviewboard_username[0] if self.opt.reviewboard_username and \
+                                                           self.opt.reviewboard_username[0] else raw_input(
+                "Enter review board Username: ")
+            password = self.opt.reviewboard_password or getpass("Enter password for %s: " % username)
             rbclient.login(username, password)
             self.rb_client = rbclient.get_root()
         return self.rb_client
@@ -161,7 +164,7 @@ class RBTJIRAClient:
             attachment_link = a['data-downloadurl'][a['data-downloadurl'].find('http'):]
             title = a.contents[0].strip()
             upload_time = li.find("dd", {'class': 'attachment-date'}).find('time')['datetime']
-            if title.split(".")[-1] in ('txt', 'patch') :
+            if title.split(".")[-1] in ('txt', 'patch'):
                 attachments.append(Attachment(title, attachment_link, upload_time))
         attachments.sort()
         chosen_attachment = attachments[-1]

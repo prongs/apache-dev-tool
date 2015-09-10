@@ -29,15 +29,18 @@
 
 import sys
 from commands import *
+import time
 
 import argparse
+
+from crawler import Crawler
 from cleaner import Cleaner
 from clients import RBTJIRAClient
 from commit import Committer
 from post_review import ReviewPoster
 from test_patch import PatchTester
 
-possible_options = ['post-review', 'clean', 'submit-patch', 'commit']
+possible_options = ['post-review', 'clean', 'submit-patch', 'commit', 'count-comments', 'test-patch']
 
 
 def Option(s):
@@ -48,11 +51,15 @@ def Option(s):
     return s
 
 
+def ParsedTime(s):
+    return time.strptime(s, '%Y-%m-%dT%H:%M:%SZ')
+
+
 def main():
     ''' main(), shut up, pylint '''
     popt = argparse.ArgumentParser(description='apache dev tool. Command line helper for frequent actions.')
     popt.add_argument('action', nargs='?', action="store", help="action of the command. One of post-review, "
-                                                                "submit-patch, commit and clean")
+                                                                "submit-patch, commit and clean", type=Option)
     popt.add_argument('-j', '--jira', action='store', dest='jira', required=False,
                       help='JIRAs. provide as -j JIRA1 -j JIRA2... Mostly only one option will be used, commit command'
                            'can provide multiple jira ids and commit all of them together.',
@@ -62,7 +69,8 @@ def main():
     popt.add_argument('-jp', '--jira-password', action='store', dest='jira_password', required=False,
                       help='JIRA Password. If not provided, it will prompt and ask the user.')
     popt.add_argument('-ru', '--reviewboard-username', action='store', dest='reviewboard_username', required=False,
-                      help='Review Board Username. If not provided, it will prompt and ask the user.')
+                      help='Reviewboard username'
+                           'can provide multiple jira ids and commit all of them together.', nargs="*")
     popt.add_argument('-rp', '--reviewboard-password', action='store', dest='reviewboard_password', required=False,
                       help='Review Board Password. If not provided, it will prompt and ask the user.')
     popt.add_argument('-b', '--branch', action='store', dest='branch', required=False,
@@ -91,6 +99,12 @@ def main():
     popt.add_argument('-rs', '--require-ship-it', action='store_true', dest='require_ship_it', required=False,
                       help='Whether to require Ship It! review before posting patch from rb to jira. True by default.'
                       , default=True)
+    popt.add_argument('-from', '--from', action='store', dest='from_time', required=False, help='Time range start',
+                      type=ParsedTime)
+    popt.add_argument('-to', '--to', action='store', dest='to_time', required=False, help='Time range end',
+                      type=ParsedTime)
+    popt.add_argument('-v', '--verbose', action='store_true', dest='verbose', required=False, help='Verbose',
+                      default=False)
     opt = popt.parse_args()
 
     client = RBTJIRAClient(opt)
@@ -107,13 +121,15 @@ def main():
         review_poster = ReviewPoster(client, opt)
         if opt.action == 'post-review':
             review_poster.post_review()
-        else:
+        elif opt.action == 'submit-patch':
             review_poster.submit_patch()
     elif opt.action == 'test-patch':
         validate_single_jira_provided()
         return PatchTester(client, opt).test_patch()
     elif opt.action == 'commit':
         return Committer(client, opt).commit()
+    elif opt.action == "count-comments":
+        return Crawler(client, opt).count_comments()
     elif opt.action == "clean":
         return Cleaner(client).clean()
     else:

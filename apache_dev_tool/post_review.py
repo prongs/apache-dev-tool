@@ -1,4 +1,5 @@
 from commands import getoutput
+from itertools import chain
 import os
 import sys
 import tempfile
