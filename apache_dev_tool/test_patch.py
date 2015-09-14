@@ -1,3 +1,4 @@
+import commands
 import os
 
 
@@ -18,9 +19,13 @@ class PatchTester:
         os.system("git checkout " + self.branch)
         os.system("git pull origin " + self.branch)
         attachment = self.client.get_latest_attachment(self.issue)
-        status = os.system("curl " + attachment.url + " | git apply")
+        apply_command = "curl " + attachment.url + " | git apply"
+        status, output = commands.getstatusoutput(apply_command)
         print "apply latest patch status:", text_status(status)
         if status != 0:
+            comment = "Patch does not apply. Output of command %s was:\n%s" % (apply_command, output)
+            self.client.jira_client.add_comment(self.issue, comment)
+            self.client.transition_issue(self.issue, "Cancel Patch")
             return status
         # status, output = commands.getstatusoutput("mvn clean install")
         command = self.opt.test_patch_command

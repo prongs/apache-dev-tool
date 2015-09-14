@@ -54,7 +54,6 @@ class Committer:
                 self.client.transition_issue(issue, 'Cancel Patch')
                 self.client.jira_client.add_comment(issue,
                                                     "Patch doesn't cleanly apply. Please sync with latest and update")
-                self.client.jira_client.transition_issue(issue, transitions[0]['id'])
                 sys.exit(status)
             os.system("git add --all .")
             if message.find(issue.key) == -1:
