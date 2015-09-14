@@ -19,15 +19,10 @@ class PatchTester:
         os.system("git checkout " + self.branch)
         os.system("git pull origin " + self.branch)
         attachment = self.client.get_latest_attachment(self.issue)
-        apply_command = "curl " + attachment.url + " | git apply"
-        status, output = commands.getstatusoutput(apply_command)
-        print "apply latest patch status:", text_status(status)
-        if status != 0:
-            comment = "Patch does not apply. Output of command %s was:\n%s" % (apply_command, output)
+        if self.apply_patch(attachment) != 0:
+            comment = "Patch does not apply."
             self.client.jira_client.add_comment(self.issue, comment)
             self.client.transition_issue(self.issue, "Cancel Patch")
-            return status
-        # status, output = commands.getstatusoutput("mvn clean install")
         command = self.opt.test_patch_command
         status = os.system(command)
         comment = "Applied patch: [%s|%s] and ran command: %s. " \
@@ -38,3 +33,17 @@ class PatchTester:
         print "resetting patch " + str(attachment)
         os.system("git reset --hard")
         os.system("git clean -f -d")
+
+    def apply_patch(self, attachment):
+        apply_command_base = "curl " + attachment.url + " | git apply"
+        status = -1
+        for suffix in ["", "-p0", "-p1"]:
+            apply_command = apply_command_base + " " + suffix
+            print "applying patch with", apply_command
+            os.system("git reset --hard")
+            os.system("git clean -f -d")
+            status, output = commands.getstatusoutput(apply_command)
+            print "apply latest patch status:", text_status(status)
+            if status == 0:
+                return 0
+        return status

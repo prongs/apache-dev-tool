@@ -5,6 +5,7 @@ from commands import getoutput
 import tempfile
 
 import requests
+from test_patch import PatchTester
 
 
 class Committer:
@@ -22,6 +23,7 @@ class Committer:
         if devVersion.find("SNAPSHOT") == -1:
             raise Exception("Current branch is not on a snapshot version")
         self.fix_version = self.guess_version(devVersion, versions)
+        self.patch_tester = PatchTester(self.client, self.opt)
 
     def commit(self):
         os.system("git reset --hard")
@@ -49,7 +51,7 @@ class Committer:
                     os.system("vimdiff %s %s" % (rb_diff_file_path, jira_diff_file_path))
                     if raw_input("Do you still want to commit patch attached in jira? [Y/N]").upper() == 'N':
                         sys.exit(1)
-            status = os.system("curl " + chosen_attachment.url + " | git apply")
+            status = self.patch_tester.apply_patch(chosen_attachment)
             if status != 0:
                 self.client.transition_issue(issue, 'Cancel Patch')
                 self.client.jira_client.add_comment(issue,
