@@ -10,7 +10,6 @@ class PatchTester:
     def __init__(self, client, opt):
         self.client = client
         self.opt = opt
-        self.issue = self.client.jira_client.issue(self.opt.jira)
         self.branch = self.opt.branch or self.client.get_branch()
 
     def test_patch(self):
@@ -18,6 +17,7 @@ class PatchTester:
         os.system("git clean -f -d")
         os.system("git checkout " + self.branch)
         os.system("git pull origin " + self.branch)
+        self.issue = self.client.jira_client.issue(self.opt.jira)
         attachment = self.client.get_latest_attachment(self.issue)
         if self.apply_patch(attachment) != 0:
             comment = "Patch does not apply."

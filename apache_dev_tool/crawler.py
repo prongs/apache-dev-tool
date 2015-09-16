@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 from itertools import chain
 import time
 
@@ -20,7 +20,7 @@ class Crawler:
 
     def count_comments(self):
         users = self.opt.reviewboard_username or [self.client.get_rb_client().get_session().get_user().username]
-        comment_count = Counter()
+        comment_count = defaultdict(lambda: Counter())
         if self.opt.reviewboard:
             candidate_review_requests = [
                 self.client.get_rb_client().get_review_request(review_request_id=self.opt.reviewboard)]
@@ -32,19 +32,28 @@ class Crawler:
                     last_updated_from=self.opt.from_time,
                     time_added_to=self.opt.to_time,
                     status="all"))
+                review_requests.append(self.client.get_rb_client().get_review_requests(
+                    from_user=user,
+                    last_updated_from=self.opt.from_time,
+                    time_added_to=self.opt.to_time,
+                    status="all"))
             candidate_review_requests = wrap_pagination(*review_requests)
         processed = []
         for review_request in candidate_review_requests:
             if review_request.id not in processed:
-                comment_count += self.comments_on_review_request(review_request, users)
+                comment_count[review_request.get_repository()['name']] += \
+                    self.comments_on_review_request(review_request, users)
                 processed.append(review_request.id)
-        print comment_count
-        return comment_count
+        for repo, count_per_repo in comment_count.items():
+            for user, count in count_per_repo.items():
+                print repo, user, count
+
 
     def timestamp_in_range(self, t):
         timestamp = time.strptime(t, '%Y-%m-%dT%H:%M:%SZ')
         return not (
-        (self.opt.from_time and self.opt.from_time > timestamp) or (self.opt.to_time and self.opt.to_time <= timestamp))
+            (self.opt.from_time and self.opt.from_time > timestamp) or (
+            self.opt.to_time and self.opt.to_time <= timestamp))
 
     def comments_on_review_request(self, review_request, users):
         comment_count = Counter()

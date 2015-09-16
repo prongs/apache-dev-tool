@@ -125,18 +125,19 @@ class RBTJIRAClient:
     def get_rb_client(self):
         if not self.rb_client:
             options = {}
-            with open(".reviewboardrc") as reviewboardrc:
-                for line in reviewboardrc:
-                    if line.startswith("#"):
-                        continue
-                    if len(line.strip()) == 0:
-                        continue
-                    k, v = line.strip().split("=")
-                    k = k.strip()
-                    v = eval(v.strip())
-                    options[k] = v
-            rbclient = RBClient(options['REVIEWBOARD_URL'])
-            self.repository = options['REPOSITORY']
+            if os.path.exists(".reviewboardrc"):
+                with open(".reviewboardrc") as reviewboardrc:
+                    for line in reviewboardrc:
+                        if line.startswith("#"):
+                            continue
+                        if len(line.strip()) == 0:
+                            continue
+                        k, v = line.strip().split("=")
+                        k = k.strip()
+                        v = eval(v.strip())
+                        options[k] = v
+            rbclient = RBClient(options.get('REVIEWBOARD_URL') or 'https://reviews.apache.org/')
+            self.repository = options.get('REPOSITORY') or None
             self.branch = options.get('BRANCH') or options.get('TRACKING_BRANCH')
             self.target_groups = None
             if options.has_key('TARGET_GROUPS'):
