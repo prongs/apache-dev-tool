@@ -26,6 +26,12 @@ class Crawler:
                 self.client.get_rb_client().get_review_request(review_request_id=self.opt.reviewboard)]
         else:
             review_requests = []
+            for repo in self.opt.repositories:
+                review_requests.append(self.client.get_rb_client().get_review_requests(
+                    repository=repo,
+                    last_updated_from=self.opt.from_time,
+                    time_added_to=self.opt.to_time,
+                    status="all"))
             for user in users:
                 review_requests.append(self.client.get_rb_client().get_review_requests(
                     to_users=user,
@@ -44,6 +50,7 @@ class Crawler:
                 comment_count[review_request.get_repository()['name']] += \
                     self.comments_on_review_request(review_request, users)
                 processed.append(review_request.id)
+        print "Final Count:"
         for repo, count_per_repo in comment_count.items():
             for user, count in count_per_repo.items():
                 print repo, user, count

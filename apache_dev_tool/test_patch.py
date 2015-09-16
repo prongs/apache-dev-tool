@@ -20,9 +20,10 @@ class PatchTester:
         self.issue = self.client.jira_client.issue(self.opt.jira)
         attachment = self.client.get_latest_attachment(self.issue)
         if self.apply_patch(attachment) != 0:
-            comment = "Patch does not apply."
+            comment = "Patch does not apply. Build job: %s" % (os.getenv("BUILD_URL", "No url availavle"))
             self.client.jira_client.add_comment(self.issue, comment)
             self.client.transition_issue(self.issue, "Cancel Patch")
+            return -1
         command = self.opt.test_patch_command
         status = os.system(command)
         comment = "Applied patch: [%s|%s] and ran command: %s. " \

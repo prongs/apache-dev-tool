@@ -68,6 +68,8 @@ def main():
                       help='JIRA Username. If not provided, it will prompt and ask the user.')
     popt.add_argument('-jp', '--jira-password', action='store', dest='jira_password', required=False,
                       help='JIRA Password. If not provided, it will prompt and ask the user.')
+    popt.add_argument('-repo', '--repository', action='store', dest='repositories', required=False,
+                      help='Reviewboard Repository names', nargs = '*', default = [])
     popt.add_argument('-ru', '--reviewboard-username', action='store', dest='reviewboard_username', required=False,
                       help='Reviewboard username'
                            'can provide multiple jira ids and commit all of them together.', nargs="*")
