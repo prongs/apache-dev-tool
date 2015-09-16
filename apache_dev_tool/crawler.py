@@ -28,7 +28,7 @@ class Crawler:
             review_requests = []
             for repo in self.opt.repositories:
                 review_requests.append(self.client.get_rb_client().get_review_requests(
-                    repository=repo,
+                    repository=self.client.get_rb_client().get_repositories(name=repo)[0]['id'],
                     last_updated_from=self.opt.from_time,
                     time_added_to=self.opt.to_time,
                     status="all"))
