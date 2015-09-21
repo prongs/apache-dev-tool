@@ -47,7 +47,7 @@ class ReviewPoster:
             draft_update_args['public'] = True
         draft.update(**draft_update_args)
         self.client.transition_issue(self.issue, 'Start Progress')
-        print "created/updated:", review_request.absolute_url
+        print("created/updated:", review_request.absolute_url)
         if self.opt.open:
             webbrowser.open_new_tab(review_request.absolute_url)
         if not self.opt.reviewboard:
@@ -57,14 +57,14 @@ class ReviewPoster:
 
     def submit_patch(self):
         if not self.opt.reviewboard:
-            print "no reviewboard entry found"
+            print("no reviewboard entry found")
             diff_str = getoutput('git diff --full-index --binary ' + self.opt.branch + "..HEAD")
             pluses = diff_str.count('\n+')
             minuses = diff_str.count('\n-')
             if pluses + minuses > 20:
-                print "Creating a review request is recommended. Please use post-review command"
+                print("Creating a review request is recommended. Please use post-review command")
                 sys.exit(0)
-            print "Diff is small enough, posting directly to jira as attachment"
+            print("Diff is small enough, posting directly to jira as attachment")
             ts = time.time()
             st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H:%M:%S')
             self.attach_patch_in_jira(st, diff_str, "Small enough diff. Attaching directly")
@@ -72,7 +72,7 @@ class ReviewPoster:
             review_request = self.client.get_rb_client().get_review_request(review_request_id=self.opt.reviewboard)
             if self.opt.require_ship_it and (
                     not [review['ship_it'] for review in review_request.get_reviews() if review['ship_it']]):
-                print "No Ship it! Reviews on the review request: " + review_request.absolute_url + ". Hence exiting."
+                print("No Ship it! Reviews on the review request: " + review_request.absolute_url + ". Hence exiting.")
                 sys.exit(1)
             diffs = review_request.get_diffs()
             diff_str = diffs[-1].get_patch().data
@@ -80,16 +80,16 @@ class ReviewPoster:
 
     def attach_patch_in_jira(self, file_suffix, data, comment):
         if len(data.strip()) == 0:
-            print "No diff"
+            print("No diff")
             sys.exit(2)
         patch_file_path = tempfile.gettempdir() + "/" + self.opt.jira + '.' + str(file_suffix) + '.patch'
         with open(patch_file_path, 'w') as patch_file:
-            print >> patch_file, data
-        print "patch file at: ", patch_file_path
+            patch_file.write(data)
+        print("patch file at: ", patch_file_path)
         if not self.issue.fields.assignee or self.issue.fields.assignee.name != \
                 self.client.jira_client.session()._session.auth[0]:
             self.client.jira_client.assign_issue(self.issue, self.client.jira_client.session()._session.auth[0])
         self.client.transition_issue(self.issue, 'Submit Patch')
         self.client.jira_client.add_attachment(self.issue, patch_file_path)
         self.client.jira_client.add_comment(self.issue, comment)
-        print "Submitted patch in jira"
+        print("Submitted patch in jira")

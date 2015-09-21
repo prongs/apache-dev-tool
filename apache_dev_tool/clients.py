@@ -170,19 +170,19 @@ class RBTJIRAClient:
         attachments.sort()
         chosen_attachment = attachments[-1]
         if choose_patch:
-            print "The following patches are available. Pick which one you want to commit: "
+            print("The following patches are available. Pick which one you want to commit: ")
             for i, attachment in enumerate(attachments):
-                print "%d: %s" % (i, attachment)
+                print("%d: %s" % (i, attachment))
             chosen_attachment = attachments[input("Enter the number corresponding to the desired patch: ")]
         return chosen_attachment
 
     def transition_issue(self, issue, name):
         transitions = [transition for transition in self.jira_client.transitions(issue) if transition['name'] == name]
         if len(transitions) == 0:
-            print "No transitions for " + name + " for issue " + issue.key
+            print("No transitions for " + name + " for issue " + issue.key)
             return False
         if len(transitions) > 1:
-            print "multiple transitions for " + name + " for issue " + issue.key
+            print("multiple transitions for " + name + " for issue " + issue.key)
             return False
         self.jira_client.transition_issue(issue, transitions[0]['id'])
         return True

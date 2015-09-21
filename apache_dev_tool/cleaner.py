@@ -12,7 +12,7 @@ class Cleaner:
         self.close_review_requests()
 
     def clean_branches(self):
-        print "Cleaning Branches"
+        print("Cleaning Branches")
         for branch in (x for x in commands.getoutput("git branch | awk '{print $(NF)}'").strip().split() if
                        x[:5] == 'LENS-'):
             jira = re.match(r'^LENS-\d+', branch).group(0)
@@ -22,7 +22,7 @@ class Cleaner:
                 print "Deleting branch %s as issue %s is marked Fixed" % (branch, issue)
                 os.system("git branch -D %s" % branch)
                 os.system("git push origin --delete %s" % branch)
-        print "Done"
+        print("Done")
 
     def close_review_requests(self):
         print "Closing review requests of fixed jiras"
@@ -35,4 +35,4 @@ class Cleaner:
                 self.client.rb_client.get_review_request(review_request_id=rb_id).update(status='submitted')
         for jira in to_delete:
             del self.client.jira_to_rbt_map[jira]
-        print "Done"
+        print("Done")

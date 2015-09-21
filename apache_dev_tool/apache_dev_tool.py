@@ -27,12 +27,13 @@
 # - jira-python
 
 
+from __future__ import print_function
 import sys
 from commands import *
 import time
 
 import argparse
-
+import datetime
 from crawler import Crawler
 from cleaner import Cleaner
 from clients import RBTJIRAClient
@@ -108,12 +109,17 @@ def main():
     popt.add_argument('-v', '--verbose', action='store_true', dest='verbose', required=False, help='Verbose',
                       default=False)
     opt = popt.parse_args()
-
+    def print_fun(*kwargs):
+        print(datetime.datetime.now(), *kwargs)
+    def no_print_fun(*kwargs):
+        pass
+    print_functions = {True:print_fun, False:no_print_fun}
+    opt.debug = print_functions[opt.verbose]
     client = RBTJIRAClient(opt)
 
     def validate_single_jira_provided():
         if len(opt.jira) != 1:
-            print "Please supply exactly one jira for", opt.action
+            print("Please supply exactly one jira for", opt.action)
             sys.exit(1)
         opt.jira = opt.jira[0].upper()
         client.valid_jira(opt.jira)
@@ -135,8 +141,8 @@ def main():
     elif opt.action == "clean":
         return Cleaner(client).clean()
     else:
-        print "Provided action not supported, you provided: ", opt.action
-        print "Provide --help option to understand usage"
+        print("Provided action not supported, you provided: ", opt.action)
+        print("Provide --help option to understand usage")
         return 1
 
 

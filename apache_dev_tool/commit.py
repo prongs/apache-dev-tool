@@ -41,7 +41,7 @@ class Committer:
                 rb_diff = review_request.get_diffs()[-1].get_patch().data
                 jira_diff = requests.get(chosen_attachment.url).text
                 if rb_diff.strip() != jira_diff.strip():
-                    print "reviewboard diff and chosen diff are different"
+                    print("reviewboard diff and chosen diff are different")
                     rb_diff_file_path = tempfile.mktemp()
                     jira_diff_file_path = tempfile.mktemp()
                     with open(rb_diff_file_path, 'w') as rb_diff_file:
@@ -61,10 +61,10 @@ class Committer:
             if message.find(issue.key) == -1:
                 message = issue.key + ": " + message
             cmd = 'git commit --author "%s <%s>" -m "%s" ' % (name, email, message.replace('"', '\\"'))
-            print cmd
+            print(cmd)
             status = os.system(cmd)
             if status != 0:
-                print "Commit failed"
+                print("Commit failed")
                 sys.exit(status)
             os.system("git commit --amend")
             if self.fix_version:
@@ -76,7 +76,7 @@ class Committer:
                 self.client.jira_client.add_comment(issue, "Committed. Thanks [~%s]" % (issue.fields.assignee.name))
             self.client.transition_issue(issue, 'Resolve Issue')
         if getoutput("git status").find("nothing to commit, working directory clean") != -1:
-            print "Everything committed nicely. Pushing"
+            print("Everything committed nicely. Pushing")
             os.system("git push origin " + self.branch)
 
     def guess_version(self, devVersion, versions):

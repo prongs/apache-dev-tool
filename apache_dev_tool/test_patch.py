@@ -31,7 +31,7 @@ class PatchTester:
                   "Build Job: %s" % (attachment.title, attachment.url, command,
                                      text_status(status), os.getenv("BUILD_URL", "No url availavle"))
         self.client.jira_client.add_comment(self.issue, comment.strip())
-        print "resetting patch " + str(attachment)
+        print("resetting patch ", str(attachment))
         os.system("git reset --hard")
         os.system("git clean -f -d")
 
@@ -40,11 +40,11 @@ class PatchTester:
         status = -1
         for suffix in ["", "-p0", "-p1"]:
             apply_command = apply_command_base + " " + suffix
-            print "applying patch with", apply_command
+            print("applying patch with", apply_command)
             os.system("git reset --hard")
             os.system("git clean -f -d")
             status, output = commands.getstatusoutput(apply_command)
-            print "apply latest patch status:", text_status(status)
+            print("apply latest patch status:", text_status(status))
             if status == 0:
                 return 0
         return status
