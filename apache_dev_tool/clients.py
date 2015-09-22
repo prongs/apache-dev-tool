@@ -5,8 +5,20 @@ import pickle
 from rbtools.api.client import RBClient
 from bs4 import BeautifulSoup
 from jira.client import JIRA
+from rbtools.api.transport.sync import SyncTransport
 import requests
+import time
 
+
+class RetryingSyncTransport(SyncTransport):
+    def _execute_request(self, request):
+        for i in xrange(10):
+            try:
+                return super(RetryingSyncTransport, self)._execute_request(request)
+            except Exception as e:
+                print("Retry#i, error: " + str(e))
+                time.sleep(i*3)
+        raise Exception("Couldn't make request even after 10 retries")
 
 class Attachment:
     def __init__(self, title, url, timestamp):
@@ -136,7 +148,7 @@ class RBTJIRAClient:
                         k = k.strip()
                         v = eval(v.strip())
                         options[k] = v
-            rbclient = RBClient(options.get('REVIEWBOARD_URL') or 'https://reviews.apache.org/')
+            rbclient = RBClient(options.get('REVIEWBOARD_URL') or 'https://reviews.apache.org/', RetryingSyncTransport)
             self.repository = options.get('REPOSITORY') or None
             self.branch = options.get('BRANCH') or options.get('TRACKING_BRANCH')
             self.target_groups = None
