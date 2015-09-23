@@ -16,7 +16,7 @@ class RetryingSyncTransport(SyncTransport):
             try:
                 return super(RetryingSyncTransport, self)._execute_request(request)
             except Exception as e:
-                print("Retry#i, error: " + str(e))
+                print("Retry#%d, error: " %(i) + str(e))
                 time.sleep(i*3)
         raise Exception("Couldn't make request even after 10 retries")
 
