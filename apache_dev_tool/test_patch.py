@@ -1,3 +1,4 @@
+from __future__ import print_function
 import commands
 import os
 
@@ -8,16 +9,16 @@ def text_status(status):
 
 class PatchTester:
     def __init__(self, client, opt):
-        self.client = client
         self.opt = opt
-        self.branch = self.opt.branch or self.client.get_branch()
+        self.issue = self.opt.issues[0]
+        self.client = client
+        self.branch = self.opt.branch or self.client.rb_client.branch
 
     def test_patch(self):
         os.system("git reset --hard")
         os.system("git clean -f -d")
         os.system("git checkout " + self.branch)
         os.system("git pull origin " + self.branch)
-        self.issue = self.client.jira_client.issue(self.opt.jira)
         attachment = self.client.get_latest_attachment(self.issue)
         if self.apply_patch(attachment) != 0:
             comment = "Patch does not apply. Build job: %s" % (os.getenv("BUILD_URL", "No url availavle"))
@@ -35,7 +36,8 @@ class PatchTester:
         os.system("git reset --hard")
         os.system("git clean -f -d")
 
-    def apply_patch(self, attachment):
+    @staticmethod
+    def apply_patch(attachment):
         apply_command_base = "curl " + attachment.url + " | git apply"
         status = -1
         for suffix in ["", "-p0", "-p1"]:

@@ -1,6 +1,8 @@
+from __future__ import print_function
 from collections import Counter, defaultdict
 from itertools import chain
 import time
+import logging
 
 
 def wrap_pagination(*list_resources):
@@ -9,14 +11,7 @@ def wrap_pagination(*list_resources):
         sub_lists.append(list_resource)
         if list_resource.num_items not in [0, list_resource.total_results]:
             for i in xrange(list_resource.total_results / list_resource.num_items):
-                for i in xrange(10):
-                    try:
-                        nxt = sub_lists[-1].get_next()
-                        sub_lists.append(nxt)
-                        break
-                    except Exception as e:
-                        print e
-
+                sub_lists.append(sub_lists[-1].get_next())
     return chain(*sub_lists)
 
 
@@ -26,45 +21,45 @@ class Crawler:
         self.opt = opt
 
     def count_comments(self):
-        users = self.opt.reviewboard_username or [self.client.get_rb_client().get_session().get_user().username]
+        users = self.opt.reviewboard_username or [self.client.rb_client.get_session().get_user().username]
         comment_count = defaultdict(lambda: Counter())
         if self.opt.reviewboard:
             candidate_review_requests = [
-                self.client.get_rb_client().get_review_request(review_request_id=self.opt.reviewboard)]
+                self.client.rb_client.get_review_request(review_request_id=self.opt.reviewboard)]
         else:
             review_requests = []
             for repo in self.opt.repositories:
-                self.opt.debug("getting review requests for repo", repo)
-                review_requests.append(self.client.get_rb_client().get_review_requests(
-                    repository=self.client.get_rb_client().get_repositories(name=repo)[0]['id'],
+                logging.info("getting review requests for repo %s", repo)
+                review_requests.append(self.client.rb_client.get_review_requests(
+                    repository=self.client.rb_client.get_repositories(name=repo)[0]['id'],
                     last_updated_from=self.opt.from_time,
                     time_added_to=self.opt.to_time,
                     status="all"))
             for user in users:
-                self.opt.debug("getting review requests to user", user)
-                review_requests.append(self.client.get_rb_client().get_review_requests(
+                logging.info("getting review requests to user %s", user)
+                review_requests.append(self.client.rb_client.get_review_requests(
                     to_users=user,
                     last_updated_from=self.opt.from_time,
                     time_added_to=self.opt.to_time,
                     status="all"))
-                self.opt.debug("getting review requests from user", user)
-                review_requests.append(self.client.get_rb_client().get_review_requests(
+                logging.info("getting review requests from user %s", user)
+                review_requests.append(self.client.rb_client.get_review_requests(
                     from_user=user,
                     last_updated_from=self.opt.from_time,
                     time_added_to=self.opt.to_time,
                     status="all"))
-            self.opt.debug("getting all pages for review requests lists")
+            logging.info("getting all pages for review requests lists")
             candidate_review_requests = wrap_pagination(*review_requests)
         processed = []
         for review_request in candidate_review_requests:
             if review_request.id not in processed:
-                self.opt.debug("processing review request", review_request.id)
+                logging.info("processing review request %s", review_request.id)
                 comment_count[review_request.get_repository()['name']] += \
                     self.comments_on_review_request(review_request, users)
                 processed.append(review_request.id)
             else:
-                self.opt.debug("not re-processing review request", review_request.id)
-        self.opt.debug("Final Count:")
+                logging.info("not re-processing review request %s", review_request.id)
+        logging.info("Final Count:")
         for repo, count_per_repo in comment_count.items():
             for user, count in count_per_repo.items():
                 print(repo, user, count)
@@ -83,21 +78,17 @@ class Crawler:
                 for comment in [review.body_top, review.body_bottom]:
                     if len(comment) > 0:
                         comment_count[review_user] += 1
-                        self.opt.debug(review_request.id, ("%04d" % comment_count[review_user]), review.timestamp,
-                                       review_user, ":", comment)
+                        logging.info("%d %04d %s %s: %s", review_request.id, comment_count[review_user],
+                                     review.timestamp,
+                                     review_user, comment)
             comments = [review.get_diff_comments(), review.get_file_attachment_comments()]
             for reply in wrap_pagination(review.get_replies()):
                 comments.append(reply.get_diff_comments())
                 comments.append(reply.get_file_attachment_comments())
             for comment in wrap_pagination(*comments):
-                for i in xrange(10):
-                    try:
-                        username = comment.get_user().username
-                        if self.timestamp_in_range(comment.timestamp) and username in users:
-                            comment_count[username] += 1
-                            self.opt.debug(review_request.id,("%04d" % comment_count[username]), comment.timestamp,
-                                           username, ":",comment.text)
-                        break
-                    except Exception as e:
-                        print e
+                username = comment.get_user().username
+                if self.timestamp_in_range(comment.timestamp) and username in users:
+                    comment_count[username] += 1
+                    logging.info("%d %04d %s %s: %s", review_request.id, comment_count[username], comment.timestamp,
+                                 username, comment.text)
         return comment_count

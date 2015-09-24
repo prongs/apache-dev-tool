@@ -28,12 +28,13 @@
 
 
 from __future__ import print_function
+import logging
 import sys
 from commands import *
 import time
 
 import argparse
-import datetime
+
 from crawler import Crawler
 from cleaner import Cleaner
 from clients import RBTJIRAClient
@@ -44,7 +45,7 @@ from test_patch import PatchTester
 possible_options = ['post-review', 'clean', 'submit-patch', 'commit', 'count-comments', 'test-patch']
 
 
-def Option(s):
+def option(s):
     s = s.lower()
     if s not in possible_options:
         raise argparse.ArgumentTypeError(
@@ -52,17 +53,16 @@ def Option(s):
     return s
 
 
-def ParsedTime(s):
+def parsed_time(s):
     return time.strptime(s, '%Y-%m-%dT%H:%M:%SZ')
 
 
 def main():
-    ''' main(), shut up, pylint '''
     popt = argparse.ArgumentParser(description='apache dev tool. Command line helper for frequent actions.')
     popt.add_argument('action', nargs='?', action="store", help="action of the command. One of post-review, "
-                                                                "submit-patch, commit and clean", type=Option)
+                                                                "submit-patch, commit and clean", type=option)
     popt.add_argument('-j', '--jira', action='store', dest='jira', required=False,
-                      help='JIRAs. provide as -j JIRA1 -j JIRA2... Mostly only one option will be used, commit command'
+                      help='JIRAs. provide as -j JIRA1 JIRA2... Mostly only one option will be used, commit command'
                            'can provide multiple jira ids and commit all of them together.',
                       default=[getoutput("git rev-parse --abbrev-ref HEAD")], nargs="*")
     popt.add_argument('-ju', '--jira-username', action='store', dest='jira_username', required=False,
@@ -70,7 +70,7 @@ def main():
     popt.add_argument('-jp', '--jira-password', action='store', dest='jira_password', required=False,
                       help='JIRA Password. If not provided, it will prompt and ask the user.')
     popt.add_argument('-repo', '--repository', action='store', dest='repositories', required=False,
-                      help='Reviewboard Repository names', nargs = '*', default = [])
+                      help='Reviewboard Repository names', nargs='*', default=[])
     popt.add_argument('-ru', '--reviewboard-username', action='store', dest='reviewboard_username', required=False,
                       help='Reviewboard username'
                            'can provide multiple jira ids and commit all of them together.', nargs="*")
@@ -100,29 +100,29 @@ def main():
     popt.add_argument('-tpc', '--test-patch-command', action='store', dest='test_patch_command', required=False,
                       help='Whether to open the review request in browser', default="mvn clean install")
     popt.add_argument('-rs', '--require-ship-it', action='store_true', dest='require_ship_it', required=False,
-                      help='Whether to require Ship It! review before posting patch from rb to jira. True by default.'
-                      , default=True)
+                      help='Whether to require Ship It! review before posting patch from rb to jira. True by default.',
+                      default=True)
     popt.add_argument('-from', '--from', action='store', dest='from_time', required=False, help='Time range start',
-                      type=ParsedTime)
+                      type=parsed_time)
     popt.add_argument('-to', '--to', action='store', dest='to_time', required=False, help='Time range end',
-                      type=ParsedTime)
+                      type=parsed_time)
     popt.add_argument('-v', '--verbose', action='store_true', dest='verbose', required=False, help='Verbose',
                       default=False)
     opt = popt.parse_args()
-    def print_fun(*kwargs):
-        print(datetime.datetime.now(), *kwargs)
-    def no_print_fun(*kwargs):
-        pass
-    print_functions = {True:print_fun, False:no_print_fun}
-    opt.debug = print_functions[opt.verbose]
+
+    logging.basicConfig(format='%(asctime)s %(name)-6s %(levelname)-6s %(message)s',
+                        level=logging.INFO if opt.verbose else logging.WARN)
     client = RBTJIRAClient(opt)
+
+    def validate_jiras():
+        opt.issues = [client.valid_jira(jira) for jira in opt.jira]
 
     def validate_single_jira_provided():
         if len(opt.jira) != 1:
-            print("Please supply exactly one jira for", opt.action)
-            sys.exit(1)
-        opt.jira = opt.jira[0].upper()
-        client.valid_jira(opt.jira)
+            raise Exception("Only single JIRA expected for this action")
+
+    if opt.action in ['post-review', 'submit-patch', 'test-patch', 'commit']:
+        validate_jiras()
 
     if opt.action in ['post-review', 'submit-patch']:
         validate_single_jira_provided()

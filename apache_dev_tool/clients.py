@@ -1,13 +1,15 @@
+from __future__ import print_function
 from getpass import getpass
 import os
 import pickle
+import time
 
 from rbtools.api.client import RBClient
 from bs4 import BeautifulSoup
 from jira.client import JIRA
 from rbtools.api.transport.sync import SyncTransport
 import requests
-import time
+from utils import cached_property
 
 
 class RetryingSyncTransport(SyncTransport):
@@ -16,9 +18,10 @@ class RetryingSyncTransport(SyncTransport):
             try:
                 return super(RetryingSyncTransport, self)._execute_request(request)
             except Exception as e:
-                print("Retry#%d, error: " %(i) + str(e))
-                time.sleep(i*3)
+                print("Retry#%d, error: " % i + str(e))
+                time.sleep(i * 3)
         raise Exception("Couldn't make request even after 10 retries")
+
 
 class Attachment:
     def __init__(self, title, url, timestamp):
@@ -39,11 +42,9 @@ class Attachment:
 class RBTJIRAClient:
     def __init__(self, opt):
         self.opt = opt
-        self.jira_to_rbt_map = self.load_jira_to_rbt_map()
-        self.jira_client = self.get_jira_client()
-        self.rb_client = None
 
-    def get_post_review_dir(self):
+    @staticmethod
+    def get_post_review_dir():
         rbt_jira_dir = os.path.join(os.getenv('HOME'), ".rbt-jira")
         if not os.path.exists(rbt_jira_dir):
             os.mkdir(rbt_jira_dir)
@@ -51,16 +52,19 @@ class RBTJIRAClient:
 
     def valid_jira(self, jira):
         try:
-            self.jira_client.issue(jira.upper())
-        except:
-            raise Exception("jira " + jira + " is not valid")
+            return self.jira_client.issue(jira.upper())
+        except Exception as e:
+            raise Exception("jira " + jira + " is not valid", e)
 
-    def load_jira_to_rbt_map(self):
+    @cached_property
+    def jira_to_rbt_map(self):
         map_path = os.path.join(self.get_post_review_dir(), 'jira-to-rbt.map')
         if os.path.exists(map_path):
             with open(map_path) as map_file:
                 return pickle.load(map_file)
-        return {}
+        else:
+            return {}
+
 
     def save_jira_to_rbt_map(self):
         map_path = os.path.join(self.get_post_review_dir(), 'jira-to-rbt.map')
@@ -80,10 +84,11 @@ class RBTJIRAClient:
         rb_ids = set()
         for comment in rb_comments:
             try:
-                id = comment.body[comment.body.find("reviews.apache.org/r/") + len("reviews.apache.org/r/"):] + "/"
-                id = id[:id.find('/')]
-                rb_ids.add(int(id))
-            except:
+                review_request_id = comment.body[
+                                    comment.body.find("reviews.apache.org/r/") + len("reviews.apache.org/r/"):] + "/"
+                review_request_id = review_request_id[:review_request_id.find('/')]
+                rb_ids.add(int(review_request_id))
+            except Exception:
                 pass
         if len(rb_ids) == 0:
             return None
@@ -91,11 +96,11 @@ class RBTJIRAClient:
             return list(rb_ids)[0]
         else:
             review_requests = []
-            for id in rb_ids:
+            for review_request_id in rb_ids:
                 try:
-                    review_request = self.get_rb_client().get_review_request(review_request_id=id)
-                    if review_request.status in ['pending'] and (
-                                    jira in review_request.bugs_closed or review_request.summary.find(jira) >= 0):
+                    review_request = self.rb_client.get_review_request(review_request_id=review_request_id)
+                    if review_request.status in ['pending'] and \
+                            (jira in review_request.bugs_closed or review_request.summary.find(jira) >= 0):
                         review_requests.append(review_request)
                 except:
                     pass
@@ -110,7 +115,8 @@ class RBTJIRAClient:
                         bug for bug in review_request.bugs_closed) + ")\n"
                 raise Exception(msg)
 
-    def get_jira_client(self):
+    @cached_property
+    def jira_client(self):
         options = {
             'server': 'https://issues.apache.org/jira'
         }
@@ -134,39 +140,39 @@ class RBTJIRAClient:
             pickle.dump(jira, jira_file)
         return jira
 
-    def get_rb_client(self):
-        if not self.rb_client:
-            options = {}
-            if os.path.exists(".reviewboardrc"):
-                with open(".reviewboardrc") as reviewboardrc:
-                    for line in reviewboardrc:
-                        if line.startswith("#"):
-                            continue
-                        if len(line.strip()) == 0:
-                            continue
-                        k, v = line.strip().split("=")
-                        k = k.strip()
-                        v = eval(v.strip())
-                        options[k] = v
-            rbclient = RBClient(options.get('REVIEWBOARD_URL') or 'https://reviews.apache.org/', RetryingSyncTransport)
-            self.repository = options.get('REPOSITORY') or None
-            self.branch = options.get('BRANCH') or options.get('TRACKING_BRANCH')
-            self.target_groups = None
-            if options.has_key('TARGET_GROUPS'):
-                self.target_groups = options['TARGET_GROUPS']
-            if rbclient.get_root().get_session()['authenticated']:
-                return rbclient.get_root()
+
+    @cached_property
+    def rb_client(self):
+        options = {}
+        if os.path.exists(".reviewboardrc"):
+            with open(".reviewboardrc") as reviewboardrc:
+                for line in reviewboardrc:
+                    if line.startswith("#"):
+                        continue
+                    if len(line.strip()) == 0:
+                        continue
+                    k, v = line.strip().split("=")
+                    k = k.strip()
+                    v = eval(v.strip())
+                    options[k] = v
+        rbclient = RBClient(options.get('REVIEWBOARD_URL') or 'https://reviews.apache.org/', RetryingSyncTransport)
+        if not rbclient.get_root().get_session()['authenticated']:
             username = self.opt.reviewboard_username[0] if self.opt.reviewboard_username and \
                                                            self.opt.reviewboard_username[0] else raw_input(
                 "Enter review board Username: ")
             password = self.opt.reviewboard_password or getpass("Enter password for %s: " % username)
             rbclient.login(username, password)
-            self.rb_client = rbclient.get_root()
-        return self.rb_client
+        root = rbclient.get_root()
+        root.repository = options.get('REPOSITORY') or None
+        root.branch = options.get('BRANCH') or options.get('TRACKING_BRANCH')
+        root.target_groups = None
+        if options.has_key('TARGET_GROUPS'):
+            root.target_groups = options['TARGET_GROUPS']
+        return root
 
-    def get_branch(self):
-        self.get_rb_client()
-        return self.branch
+    @cached_property
+    def branch(self):
+        return self.rb_client.branch
 
     def get_latest_attachment(self, issue, choose_patch=False):
         attachments = []
@@ -198,3 +204,7 @@ class RBTJIRAClient:
             return False
         self.jira_client.transition_issue(issue, transitions[0]['id'])
         return True
+
+    @property
+    def jira_user(self):
+        return self.jira_client.session()._session.auth[0]

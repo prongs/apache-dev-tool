@@ -1,5 +1,5 @@
+from __future__ import print_function
 from commands import getoutput
-from itertools import chain
 import os
 import sys
 import tempfile
@@ -12,15 +12,16 @@ class ReviewPoster:
     def __init__(self, client, opt):
         self.client = client
         self.opt = opt
-        self.issue = self.client.jira_client.issue(self.opt.jira)
+        self.issue = opt.issues[0]
         self.opt.reviewboard = self.opt.reviewboard or self.client.get_rb_for_jira(self.opt.jira)
-        self.opt.branch = self.opt.branch or self.client.get_branch()
+        self.opt.branch = self.opt.branch or self.client.rb_client.branch
 
     def post_review(self):
         if self.opt.reviewboard:
-            review_request = self.client.get_rb_client().get_review_request(review_request_id=self.opt.reviewboard)
+            review_request = self.client.rb_client.get_review_request(review_request_id=self.opt.reviewboard)
         else:
-            review_request = self.client.get_rb_client().get_review_requests().create(repository=self.client.repository)
+            review_request = self.client.rb_client.get_review_requests().create(
+                repository=self.client.rb_client.repository)
         os.system("git remote update")
         os.system("git merge " + self.opt.branch)
         os.system("git mergetool")
@@ -29,8 +30,8 @@ class ReviewPoster:
         review_request.get_diffs().upload_diff(diff_str)
         draft = review_request.get_draft()
         draft_update_args = {"bugs_closed": self.opt.jira, "branch": self.opt.branch}
-        if self.client.target_groups:
-            draft_update_args['target_groups'] = self.client.target_groups
+        if self.client.rb_client.target_groups:
+            draft_update_args['target_groups'] = self.client.rb_client.target_groups
         draft_update_args['summary'] = self.opt.summary or draft.summary or self.issue.fields.summary
         if draft_update_args['summary'].upper().find(self.opt.jira) != 0:
             draft_update_args['summary'] = self.issue.key + ": " + draft_update_args['summary']
@@ -69,7 +70,7 @@ class ReviewPoster:
             st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H:%M:%S')
             self.attach_patch_in_jira(st, diff_str, "Small enough diff. Attaching directly")
         else:
-            review_request = self.client.get_rb_client().get_review_request(review_request_id=self.opt.reviewboard)
+            review_request = self.client.rb_client.get_review_request(review_request_id=self.opt.reviewboard)
             if self.opt.require_ship_it and (
                     not [review['ship_it'] for review in review_request.get_reviews() if review['ship_it']]):
                 print("No Ship it! Reviews on the review request: " + review_request.absolute_url + ". Hence exiting.")
@@ -87,8 +88,8 @@ class ReviewPoster:
             patch_file.write(data)
         print("patch file at: ", patch_file_path)
         if not self.issue.fields.assignee or self.issue.fields.assignee.name != \
-                self.client.jira_client.session()._session.auth[0]:
-            self.client.jira_client.assign_issue(self.issue, self.client.jira_client.session()._session.auth[0])
+                self.client.jira_user:
+            self.client.jira_client.assign_issue(self.issue, self.client.jira_user)
         self.client.transition_issue(self.issue, 'Submit Patch')
         self.client.jira_client.add_attachment(self.issue, patch_file_path)
         self.client.jira_client.add_comment(self.issue, comment)

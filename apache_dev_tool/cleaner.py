@@ -1,3 +1,4 @@
+from __future__ import print_function
 import commands
 import os
 import re
@@ -19,13 +20,13 @@ class Cleaner:
             issue = self.client.jira_client.issue(jira)
             resolution = issue.fields.resolution
             if resolution and resolution.name == 'Fixed':
-                print "Deleting branch %s as issue %s is marked Fixed" % (branch, issue)
+                print("Deleting branch %s as issue %s is marked Fixed" % (branch, issue))
                 os.system("git branch -D %s" % branch)
                 os.system("git push origin --delete %s" % branch)
         print("Done")
 
     def close_review_requests(self):
-        print "Closing review requests of fixed jiras"
+        print("Closing review requests of fixed jiras")
         to_delete = []
         for jira, rb_id in self.client.jira_to_rbt_map.items():
             issue = self.client.jira_client.issue(jira)
