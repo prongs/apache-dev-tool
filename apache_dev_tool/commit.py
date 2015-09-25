@@ -36,7 +36,7 @@ class Committer:
             message = issue.fields.summary
             rb_id = self.client.get_rb_for_jira(issue.key)
             if rb_id:
-                review_request = self.client.get_rb_client().get_review_request(review_request_id=rb_id)
+                review_request = self.client.rb_client.get_review_request(review_request_id=rb_id)
                 message = review_request.summary
                 rb_diff = review_request.get_diffs()[-1].get_patch().data
                 jira_diff = requests.get(chosen_attachment.url).text

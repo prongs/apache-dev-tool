@@ -22,6 +22,8 @@ class Crawler:
 
     def count_comments(self):
         users = self.opt.reviewboard_username or [self.client.rb_client.get_session().get_user().username]
+        print(self.client.rb_client)
+        print(self.client.jira_client)
         comment_count = defaultdict(lambda: Counter())
         if self.opt.reviewboard:
             candidate_review_requests = [

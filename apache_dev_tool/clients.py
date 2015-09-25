@@ -43,9 +43,14 @@ class RBTJIRAClient:
     def __init__(self, opt):
         self.opt = opt
 
-    @staticmethod
-    def get_post_review_dir():
-        rbt_jira_dir = os.path.join(os.getenv('HOME'), ".rbt-jira")
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.save_jira_to_rbt_map()
+
+    @cached_property
+    def post_review_dir(self):
+        rbt_jira_dir = os.path.join(os.getenv('HOME'), ".apache-dev-tool")
         if not os.path.exists(rbt_jira_dir):
             os.mkdir(rbt_jira_dir)
         return rbt_jira_dir
@@ -58,62 +63,60 @@ class RBTJIRAClient:
 
     @cached_property
     def jira_to_rbt_map(self):
-        map_path = os.path.join(self.get_post_review_dir(), 'jira-to-rbt.map')
+        map_path = os.path.join(self.post_review_dir, 'jira-to-rbt.map')
         if os.path.exists(map_path):
             with open(map_path) as map_file:
-                return pickle.load(map_file)
-        else:
-            return {}
+                try:
+                    ret = pickle.load(map_file)
+                    return ret
+                except:
+                    pass
+        return {}
 
 
     def save_jira_to_rbt_map(self):
-        map_path = os.path.join(self.get_post_review_dir(), 'jira-to-rbt.map')
+        map_path = os.path.join(self.post_review_dir, 'jira-to-rbt.map')
         with open(map_path, 'w') as map_file:
             pickle.dump(self.jira_to_rbt_map, map_file)
 
     def put_rb_for_jira(self, jira, rb):
-        self.jira_to_rbt_map[jira] = rb
-        self.save_jira_to_rbt_map()
+        self.jira_to_rbt_map[jira.upper()] = rb
 
     def get_rb_for_jira(self, jira):
-        if self.jira_to_rbt_map.has_key(jira.upper()):
-            return self.jira_to_rbt_map.get(jira.upper())
-        issue = self.jira_client.issue(jira)
-        rb_comments = (comment for comment in issue.fields.comment.comments if
-                       comment.body.find('reviews.apache.org/r/') > 0)
-        rb_ids = set()
-        for comment in rb_comments:
-            try:
-                review_request_id = comment.body[
-                                    comment.body.find("reviews.apache.org/r/") + len("reviews.apache.org/r/"):] + "/"
-                review_request_id = review_request_id[:review_request_id.find('/')]
-                rb_ids.add(int(review_request_id))
-            except Exception:
-                pass
-        if len(rb_ids) == 0:
-            return None
-        elif len(rb_ids) == 1:
-            return list(rb_ids)[0]
-        else:
-            review_requests = []
-            for review_request_id in rb_ids:
+        if not self.jira_to_rbt_map.has_key(jira.upper()):
+            issue = self.jira_client.issue(jira)
+            rb_comments = (comment for comment in issue.fields.comment.comments if
+                           comment.body.find('reviews.apache.org/r/') > 0)
+            rb_ids = set()
+            for comment in rb_comments:
                 try:
-                    review_request = self.rb_client.get_review_request(review_request_id=review_request_id)
-                    if review_request.status in ['pending'] and \
-                            (jira in review_request.bugs_closed or review_request.summary.find(jira) >= 0):
-                        review_requests.append(review_request)
-                except:
+                    review_request_id = comment.body[
+                                        comment.body.find("reviews.apache.org/r/") + len("reviews.apache.org/r/"):] + "/"
+                    review_request_id = review_request_id[:review_request_id.find('/')]
+                    rb_ids.add(int(review_request_id))
+                except Exception:
                     pass
-            if len(review_requests) == 0:
-                return None
-            elif len(review_requests) == 1:
-                return review_requests[0].id
+            if len(rb_ids) == 1:
+                self.jira_to_rbt_map[jira.upper()] = list(rb_ids)[0]
             else:
-                msg = "Could not determine review request uniquely. Options were: \n"
-                for review_request in review_requests:
-                    msg += "\t" + str(review_request.id) + ":" + review_request.summary + "(solves " + ','.join(
-                        bug for bug in review_request.bugs_closed) + ")\n"
-                raise Exception(msg)
+                review_requests = []
+                for review_request_id in rb_ids:
+                    try:
+                        review_request = self.rb_client.get_review_request(review_request_id=review_request_id)
+                        if review_request.status in ['pending'] and \
+                                (jira in review_request.bugs_closed or review_request.summary.find(jira) >= 0):
+                            review_requests.append(review_request)
+                    except:
+                        pass
+                if len(review_requests) == 1:
+                    self.jira_to_rbt_map[jira.upper()] = review_requests[0].id
+                else:
+                    msg = "Could not determine review request uniquely. Options were: \n"
+                    for review_request in review_requests:
+                        msg += "\t" + str(review_request.id) + ":" + review_request.summary + "(solves " + ','.join(
+                            bug for bug in review_request.bugs_closed) + ")\n"
+                    raise Exception(msg)
+            return self.jira_to_rbt_map.get(jira.upper(), None)
 
     @cached_property
     def jira_client(self):
@@ -121,7 +124,7 @@ class RBTJIRAClient:
             'server': 'https://issues.apache.org/jira'
         }
         # read the config file
-        post_review_path = self.get_post_review_dir()
+        post_review_path = self.post_review_dir
         jira_path = os.path.join(post_review_path, "jira")
         if os.path.exists(jira_path):
             with open(jira_path) as jira_file:
@@ -169,10 +172,6 @@ class RBTJIRAClient:
         if options.has_key('TARGET_GROUPS'):
             root.target_groups = options['TARGET_GROUPS']
         return root
-
-    @cached_property
-    def branch(self):
-        return self.rb_client.branch
 
     def get_latest_attachment(self, issue, choose_patch=False):
         attachments = []

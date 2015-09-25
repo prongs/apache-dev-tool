@@ -112,38 +112,38 @@ def main():
 
     logging.basicConfig(format='%(asctime)s %(name)-6s %(levelname)-6s %(message)s',
                         level=logging.INFO if opt.verbose else logging.WARN)
-    client = RBTJIRAClient(opt)
 
-    def validate_jiras():
-        opt.issues = [client.valid_jira(jira) for jira in opt.jira]
+    with RBTJIRAClient(opt) as client:
+        def validate_jiras():
+            opt.issues = [client.valid_jira(jira) for jira in opt.jira]
 
-    def validate_single_jira_provided():
-        if len(opt.jira) != 1:
-            raise Exception("Only single JIRA expected for this action")
+        def validate_single_jira_provided():
+            if len(opt.jira) != 1:
+                raise Exception("Only single JIRA expected for this action")
 
-    if opt.action in ['post-review', 'submit-patch', 'test-patch', 'commit']:
-        validate_jiras()
+        if opt.action in ['post-review', 'submit-patch', 'test-patch', 'commit']:
+            validate_jiras()
 
-    if opt.action in ['post-review', 'submit-patch']:
-        validate_single_jira_provided()
-        review_poster = ReviewPoster(client, opt)
-        if opt.action == 'post-review':
-            review_poster.post_review()
-        elif opt.action == 'submit-patch':
-            review_poster.submit_patch()
-    elif opt.action == 'test-patch':
-        validate_single_jira_provided()
-        return PatchTester(client, opt).test_patch()
-    elif opt.action == 'commit':
-        return Committer(client, opt).commit()
-    elif opt.action == "count-comments":
-        return Crawler(client, opt).count_comments()
-    elif opt.action == "clean":
-        return Cleaner(client).clean()
-    else:
-        print("Provided action not supported, you provided: ", opt.action)
-        print("Provide --help option to understand usage")
-        return 1
+        if opt.action in ['post-review', 'submit-patch']:
+            validate_single_jira_provided()
+            review_poster = ReviewPoster(client, opt)
+            if opt.action == 'post-review':
+                review_poster.post_review()
+            elif opt.action == 'submit-patch':
+                review_poster.submit_patch()
+        elif opt.action == 'test-patch':
+            validate_single_jira_provided()
+            return PatchTester(client, opt).test_patch()
+        elif opt.action == 'commit':
+            return Committer(client, opt).commit()
+        elif opt.action == "count-comments":
+            return Crawler(client, opt).count_comments()
+        elif opt.action == "clean":
+            return Cleaner(client).clean()
+        else:
+            print("Provided action not supported, you provided: ", opt.action)
+            print("Provide --help option to understand usage")
+            return 1
 
 
 if __name__ == '__main__':
