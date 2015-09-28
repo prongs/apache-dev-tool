@@ -12,8 +12,9 @@ class ReviewPoster:
     def __init__(self, client, opt):
         self.client = client
         self.opt = opt
-        self.issue = opt.issues[0]
-        self.opt.reviewboard = self.opt.reviewboard or self.client.get_rb_for_jira(self.opt.jira)
+        self.issue = self.opt.issues[0]
+        self.jira = self.opt.jira[0]
+        self.opt.reviewboard = self.opt.reviewboard or self.client.get_rb_for_jira(self.jira)
         self.opt.branch = self.opt.branch or self.client.rb_client.branch
 
     def post_review(self):
@@ -29,11 +30,11 @@ class ReviewPoster:
         diff_str = getoutput('git diff --full-index --binary ' + self.opt.branch + "..HEAD") + '\n'
         review_request.get_diffs().upload_diff(diff_str)
         draft = review_request.get_draft()
-        draft_update_args = {"bugs_closed": self.opt.jira, "branch": self.opt.branch}
+        draft_update_args = {"bugs_closed": self.jira, "branch": self.opt.branch}
         if self.client.rb_client.target_groups:
             draft_update_args['target_groups'] = self.client.rb_client.target_groups
         draft_update_args['summary'] = self.opt.summary or draft.summary or self.issue.fields.summary
-        if draft_update_args['summary'].upper().find(self.opt.jira) != 0:
+        if draft_update_args['summary'].upper().find(self.jira) != 0:
             draft_update_args['summary'] = self.issue.key + ": " + draft_update_args['summary']
         if draft_update_args['summary'] == draft.summary:
             del draft_update_args['summary']
@@ -52,7 +53,7 @@ class ReviewPoster:
         if self.opt.open:
             webbrowser.open_new_tab(review_request.absolute_url)
         if not self.opt.reviewboard:
-            self.client.put_rb_for_jira(self.opt.jira, review_request.id)
+            self.client.put_rb_for_jira(self.jira, review_request.id)
         if self.opt.publish and review_request.get_diffs().total_results <= 1:
             self.client.jira_client.add_comment(self.issue, "Created " + review_request.absolute_url)
 
@@ -64,7 +65,8 @@ class ReviewPoster:
             minuses = diff_str.count('\n-')
             if pluses + minuses > 20:
                 print("Creating a review request is recommended. Please use post-review command")
-                sys.exit(0)
+                if raw_input("Do you still want to continue? [Y/N]").lower() not in ['y', 'yes', 'true', 'ok']:
+                    sys.exit(0)
             print("Diff is small enough, posting directly to jira as attachment")
             ts = time.time()
             st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H:%M:%S')
@@ -83,7 +85,7 @@ class ReviewPoster:
         if len(data.strip()) == 0:
             print("No diff")
             sys.exit(2)
-        patch_file_path = tempfile.gettempdir() + "/" + self.opt.jira + '.' + str(file_suffix) + '.patch'
+        patch_file_path = tempfile.gettempdir() + "/" + self.jira + '.' + str(file_suffix) + '.patch'
         with open(patch_file_path, 'w') as patch_file:
             patch_file.write(data)
         print("patch file at: ", patch_file_path)

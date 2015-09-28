@@ -1,5 +1,6 @@
 from __future__ import print_function
 from getpass import getpass
+import logging
 import os
 import pickle
 import time
@@ -115,7 +116,7 @@ class RBTJIRAClient:
                     for review_request in review_requests:
                         msg += "\t" + str(review_request.id) + ":" + review_request.summary + "(solves " + ','.join(
                             bug for bug in review_request.bugs_closed) + ")\n"
-                    raise Exception(msg)
+                    logging.warn(msg)
             return self.jira_to_rbt_map.get(jira.upper(), None)
 
     @cached_property

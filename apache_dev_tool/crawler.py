@@ -10,7 +10,10 @@ def wrap_pagination(*list_resources):
     for list_resource in list_resources:
         sub_lists.append(list_resource)
         if list_resource.num_items not in [0, list_resource.total_results]:
-            for i in xrange(list_resource.total_results / list_resource.num_items):
+            d, m = divmod(list_resource.total_results, list_resource.num_items)
+            if m == 0:
+                d -= 1
+            for i in xrange(d):
                 sub_lists.append(sub_lists[-1].get_next())
     return chain(*sub_lists)
 
@@ -22,8 +25,6 @@ class Crawler:
 
     def count_comments(self):
         users = self.opt.reviewboard_username or [self.client.rb_client.get_session().get_user().username]
-        print(self.client.rb_client)
-        print(self.client.jira_client)
         comment_count = defaultdict(lambda: Counter())
         if self.opt.reviewboard:
             candidate_review_requests = [
