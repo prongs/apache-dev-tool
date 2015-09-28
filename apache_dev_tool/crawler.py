@@ -36,6 +36,7 @@ class Crawler:
                     last_updated_from=self.opt.from_time,
                     time_added_to=self.opt.to_time,
                     status="all"))
+                logging.info("got %d review requests", review_requests[-1].total_results)
             for user in users:
                 logging.info("getting review requests to user %s", user)
                 review_requests.append(self.client.rb_client.get_review_requests(
@@ -43,16 +44,18 @@ class Crawler:
                     last_updated_from=self.opt.from_time,
                     time_added_to=self.opt.to_time,
                     status="all"))
+                logging.info("got %d review requests", review_requests[-1].total_results)
                 logging.info("getting review requests from user %s", user)
                 review_requests.append(self.client.rb_client.get_review_requests(
                     from_user=user,
                     last_updated_from=self.opt.from_time,
                     time_added_to=self.opt.to_time,
                     status="all"))
+                logging.info("got %d review requests", review_requests[-1].total_results)
             logging.info("getting all pages for review requests lists")
             total_review_requests = sum(review_request.total_results for review_request in review_requests)
-            logging.info("total review requests(might be repeated): %d", total_review_requests)
             candidate_review_requests = wrap_pagination(*review_requests)
+            logging.info("total review requests(might be repeated): %d", total_review_requests)
         format = '%0' + str(len(str(total_review_requests))) + 'd'
         processed = []
         for counter, review_request in enumerate(candidate_review_requests):
