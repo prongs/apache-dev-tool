@@ -9,11 +9,8 @@ def wrap_pagination(*list_resources):
     sub_lists = []
     for list_resource in list_resources:
         sub_lists.append(list_resource)
-        if list_resource.num_items not in [0, list_resource.total_results]:
-            d, m = divmod(list_resource.total_results, list_resource.num_items)
-            if m == 0:
-                d -= 1
-            for i in xrange(d):
+        if list_resource.num_items != 0:
+            for i in xrange((list_resource.total_results - 1) / list_resource.num_items):
                 sub_lists.append(sub_lists[-1].get_next())
     return chain(*sub_lists)
 
@@ -29,6 +26,7 @@ class Crawler:
         if self.opt.reviewboard:
             candidate_review_requests = [
                 self.client.rb_client.get_review_request(review_request_id=self.opt.reviewboard)]
+            total_review_requests = 1
         else:
             review_requests = []
             for repo in self.opt.repositories:
@@ -52,16 +50,20 @@ class Crawler:
                     time_added_to=self.opt.to_time,
                     status="all"))
             logging.info("getting all pages for review requests lists")
+            total_review_requests = sum(review_request.total_results for review_request in review_requests)
+            logging.info("total review requests(might be repeated): %d", total_review_requests)
             candidate_review_requests = wrap_pagination(*review_requests)
+        format = '%0' + str(len(str(total_review_requests))) + 'd'
         processed = []
-        for review_request in candidate_review_requests:
+        for counter, review_request in enumerate(candidate_review_requests):
+            prefix = ("%s/%s" % (format, format)) % (counter, total_review_requests)
             if review_request.id not in processed:
-                logging.info("processing review request %s", review_request.id)
+                logging.info("%s processing review request %s", prefix, review_request.id)
                 comment_count[review_request.get_repository()['name']] += \
                     self.comments_on_review_request(review_request, users)
                 processed.append(review_request.id)
             else:
-                logging.info("not re-processing review request %s", review_request.id)
+                logging.info("%s not re-processing review request %s", prefix, review_request.id)
         logging.info("Final Count:")
         for repo, count_per_repo in comment_count.items():
             for user, count in count_per_repo.items():
