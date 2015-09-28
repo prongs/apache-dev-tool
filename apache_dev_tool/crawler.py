@@ -65,6 +65,7 @@ class Crawler:
                 comment_count[review_request.get_repository()['name']] += \
                     self.comments_on_review_request(review_request, users)
                 processed.append(review_request.id)
+                logging.info("current count: %s", str(comment_count))
             else:
                 logging.info("%s not re-processing review request %s", prefix, review_request.id)
         logging.info("Final Count:")
