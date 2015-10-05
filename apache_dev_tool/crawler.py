@@ -62,13 +62,16 @@ class Crawler:
             prefix = ("%s/%s" % (format, format)) % (counter, total_review_requests)
             if review_request.id not in processed:
                 logging.info("%s processing review request %s", prefix, review_request.id)
-                comment_count[review_request.get_repository()['name']] += \
-                    self.comments_on_review_request(review_request, users)
+                try:
+                    comment_count[review_request.get_repository()['name']] += \
+                        self.comments_on_review_request(review_request, users)
+                except AttributeError as e:
+                    logging.error("Old review requests, repo not available")
                 processed.append(review_request.id)
                 logging.info("current count: %s", str(comment_count))
             else:
                 logging.info("%s not re-processing review request %s", prefix, review_request.id)
-        logging.info("Final Count:")
+        print("Final Count:")
         for repo, count_per_repo in comment_count.items():
             for user, count in count_per_repo.items():
                 print(repo, user, count)
