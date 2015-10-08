@@ -4,7 +4,6 @@ import logging
 import os
 import pickle
 import time
-
 from rbtools.api.client import RBClient
 from bs4 import BeautifulSoup
 from jira.client import JIRA
@@ -117,7 +116,7 @@ class RBTJIRAClient:
                         msg += "\t" + str(review_request.id) + ":" + review_request.summary + "(solves " + ','.join(
                             bug for bug in review_request.bugs_closed) + ")\n"
                     logging.warn(msg)
-            return self.jira_to_rbt_map.get(jira.upper(), None)
+        return self.jira_to_rbt_map.get(jira.upper(), None)
 
     @cached_property
     def jira_client(self):
