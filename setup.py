@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-version = '0.1.19'
+version = '0.1.20'
 setup(
     name='apache_dev_tool',
     packages=['apache_dev_tool'],  # this must be the same as the name above
@@ -18,6 +18,7 @@ setup(
         "beautifulsoup4>=4.3.2",
         "RBTools>=0.7.4",
         "requests>=2.7.0",
+        "jenkinsapi>=0.2.28",
     ],
     entry_points={
         'console_scripts': ['apache-dev-tool=apache_dev_tool.apache_dev_tool:main'],

@@ -10,7 +10,8 @@ from jira.client import JIRA
 from rbtools.api.transport.sync import SyncTransport
 import requests
 from utils import cached_property
-
+import jenkinsapi
+from jenkinsapi.jenkins import Jenkins
 
 class RetryingSyncTransport(SyncTransport):
     def _execute_request(self, request):
@@ -207,3 +208,12 @@ class RBTJIRAClient:
     @property
     def jira_user(self):
         return self.jira_client.session()._session.auth[0]
+
+def get_jenkins_build(url):
+    if not url.endswith("/"):
+        url = url + "/"
+    split = url.split("/")
+    return Jenkins("/".join(split[:3]) + '/')[split[-3]][int(split[-2])]
+
+if __name__ == '__main__':
+    get_jenkins_build("https://builds.apache.org/job/PreCommit-Lens-Build/158/")
