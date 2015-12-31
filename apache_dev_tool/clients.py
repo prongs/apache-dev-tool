@@ -88,35 +88,26 @@ class RBTJIRAClient:
             issue = self.jira_client.issue(jira)
             rb_comments = (comment for comment in issue.fields.comment.comments if
                            comment.body.find('reviews.apache.org/r/') > 0)
-            rb_ids = set()
+            review_requests = []
             for comment in rb_comments:
                 try:
                     review_request_id = comment.body[
                                         comment.body.find("reviews.apache.org/r/") + len("reviews.apache.org/r/"):] + "/"
                     review_request_id = review_request_id[:review_request_id.find('/')]
-                    rb_ids.add(int(review_request_id))
-                except Exception:
-                    pass
-            if len(rb_ids) == 1:
-                self.jira_to_rbt_map[jira.upper()] = list(rb_ids)[0]
+                    review_request = self.rb_client.get_review_request(review_request_id=review_request_id)
+                    if review_request.status in ['pending'] and \
+                        (jira in review_request.bugs_closed or review_request.summary.find(jira) >= 0):
+                        review_requests.append(review_request)
+                except Exception as e:
+                    logging.warn(e)
+            if len(review_requests) == 1:
+                self.jira_to_rbt_map[jira.upper()] = review_requests[0].id
             else:
-                review_requests = []
-                for review_request_id in rb_ids:
-                    try:
-                        review_request = self.rb_client.get_review_request(review_request_id=review_request_id)
-                        if review_request.status in ['pending'] and \
-                                (jira in review_request.bugs_closed or review_request.summary.find(jira) >= 0):
-                            review_requests.append(review_request)
-                    except:
-                        pass
-                if len(review_requests) == 1:
-                    self.jira_to_rbt_map[jira.upper()] = review_requests[0].id
-                else:
-                    msg = "Could not determine review request uniquely. Options were: \n"
-                    for review_request in review_requests:
-                        msg += "\t" + str(review_request.id) + ":" + review_request.summary + "(solves " + ','.join(
-                            bug for bug in review_request.bugs_closed) + ")\n"
-                    logging.warn(msg)
+                msg = "Could not determine review request uniquely. Options were: \n"
+                for review_request in review_requests:
+                    msg += "\t" + str(review_request.id) + ":" + review_request.summary + "(solves " + ','.join(
+                        bug for bug in review_request.bugs_closed) + ")\n"
+                logging.warn(msg)
         return self.jira_to_rbt_map.get(jira.upper(), None)
 
     @cached_property

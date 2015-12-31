@@ -90,7 +90,7 @@ class Crawler:
                 for comment in [review.body_top, review.body_bottom]:
                     if len(comment) > 0:
                         comment_count[review_user] += 1
-                        logging.info("%d %04d %s %s: %s", review_request.id, comment_count[review_user],
+                        logging.debug("%d %04d %s %s: %s", review_request.id, comment_count[review_user],
                                      review.timestamp,
                                      review_user, comment)
             comments = [review.get_diff_comments(), review.get_file_attachment_comments()]
@@ -101,6 +101,6 @@ class Crawler:
                 username = comment.get_user().username
                 if self.timestamp_in_range(comment.timestamp) and username in users:
                     comment_count[username] += 1
-                    logging.info("%d %04d %s %s: %s", review_request.id, comment_count[username], comment.timestamp,
+                    logging.debug("%d %04d %s %s: %s", review_request.id, comment_count[username], comment.timestamp,
                                  username, comment.text)
         return comment_count
