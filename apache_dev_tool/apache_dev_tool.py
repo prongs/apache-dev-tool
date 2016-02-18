@@ -101,7 +101,7 @@ def main():
                       help='Whether to open the review request in browser', default="mvn clean install -fae")
     popt.add_argument('-rs', '--require-ship-it', action='store_true', dest='require_ship_it', required=False,
                       help='Whether to require Ship It! review before posting patch from rb to jira. True by default.',
-                      default=True)
+                      default=False)
     popt.add_argument('-from', '--from', action='store', dest='from_time', required=False, help='Time range start',
                       type=parsed_time)
     popt.add_argument('-to', '--to', action='store', dest='to_time', required=False, help='Time range end',
