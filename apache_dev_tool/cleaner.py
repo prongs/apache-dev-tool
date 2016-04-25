@@ -14,15 +14,17 @@ class Cleaner:
 
     def clean_branches(self):
         print("Cleaning Branches")
-        for branch in (x for x in commands.getoutput("git branch | awk '{print $(NF)}'").strip().split() if
-                       x[:5] == 'LENS-'):
-            jira = re.match(r'^LENS-\d+', branch).group(0)
-            issue = self.client.jira_client.issue(jira)
-            resolution = issue.fields.resolution
-            if resolution and resolution.name == 'Fixed':
-                print("Deleting branch %s as issue %s is marked Fixed" % (branch, issue))
-                os.system("git branch -D %s" % branch)
-                os.system("git push origin --delete %s" % branch)
+        for branch in commands.getoutput("git branch | awk '{print $(NF)}'").strip().split():
+            try:
+                jira = re.match(r'^\w+-\d+', branch).group(0)
+                issue = self.client.jira_client.issue(jira)
+                resolution = issue.fields.resolution
+                if resolution and resolution.name == 'Fixed':
+                    print("Deleting branch %s as issue %s is marked Fixed" % (branch, issue))
+                    os.system("git branch -D %s" % branch)
+                    os.system("git push origin --delete %s" % branch)
+            except Exception as e:
+                print("Skipped cleaning branch " + branch + " because: " + str(e))
         print("Done")
 
     def close_review_requests(self):

@@ -1,9 +1,10 @@
 from distutils.core import setup
 
-version = '0.1.22'
+version = '0.1.23'
+name = 'apache_dev_tool'
 setup(
-    name='apache_dev_tool',
-    packages=['apache_dev_tool'],  # this must be the same as the name above
+    name=name,
+    packages=[name],  # this must be the same as the name above
     version=version,
     description='Tool for apache contributors and committers.',
     author='Rajat Khandelwal',
