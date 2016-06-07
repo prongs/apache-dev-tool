@@ -19,20 +19,20 @@ class PatchTester:
         os.system("git clean -f -d")
         os.system("git checkout " + self.branch)
         os.system("git pull origin " + self.branch)
-        attachment = self.client.get_latest_attachment(self.issue)
-        if self.apply_patch(attachment) != 0:
+        attachments = list(self.client.get_latest_attachment(issue) for issue in self.opt.issues)
+        if sum(self.apply_patch(attachment) for attachment in attachments) != 0:
             comment = "Patch does not apply. Build job: %s" % (os.getenv("BUILD_URL", "No url availavle"))
             self.client.jira_client.add_comment(self.issue, comment)
             self.client.transition_issue(self.issue, "Cancel Patch")
             return -1
         command = self.opt.test_patch_command
         status = os.system(command)
-        comment = "Applied patch: [%s|%s] and ran command: %s. " \
+        comment = "Applied patch: %s and ran command: %s. " \
                   "Result: %s. " \
-                  "Build Job: %s" % (attachment.title, attachment.url, command,
-                                     text_status(status), os.getenv("BUILD_URL", "No url availavle"))
+                  "Build Job: %s" % (', '.join("[%s|%s]" % (attachment.title, attachment.url) for attachment in attachments),
+                                     command, text_status(status), os.getenv("BUILD_URL", "No url availavle"))
         self.client.jira_client.add_comment(self.issue, comment.strip())
-        print("resetting patch ", str(attachment))
+        print("resetting patch.")
         os.system("git reset --hard")
         os.system("git clean -f -d")
 

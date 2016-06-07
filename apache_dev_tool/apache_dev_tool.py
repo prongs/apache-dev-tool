@@ -132,7 +132,6 @@ def main():
             elif opt.action == 'submit-patch':
                 review_poster.submit_patch()
         elif opt.action == 'test-patch':
-            validate_single_jira_provided()
             return PatchTester(client, opt).test_patch()
         elif opt.action == 'commit':
             return Committer(client, opt).commit()
