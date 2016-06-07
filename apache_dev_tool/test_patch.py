@@ -43,8 +43,6 @@ class PatchTester:
         for suffix in ["", "-p0", "-p1"]:
             apply_command = apply_command_base + " " + suffix
             print("applying patch with", apply_command)
-            os.system("git reset --hard")
-            os.system("git clean -f -d")
             status, output = commands.getstatusoutput(apply_command)
             print("apply latest patch status:", text_status(status))
             if status == 0:
