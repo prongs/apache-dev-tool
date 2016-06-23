@@ -10,8 +10,6 @@ from jira.client import JIRA
 from rbtools.api.transport.sync import SyncTransport
 import requests
 from utils import cached_property
-import jenkinsapi
-from jenkinsapi.jenkins import Jenkins
 
 class RetryingSyncTransport(SyncTransport):
     def _execute_request(self, request):

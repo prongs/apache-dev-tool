@@ -86,8 +86,9 @@ class ReviewPoster:
             print("No diff")
             sys.exit(2)
         patch_file_path = tempfile.gettempdir() + "/" + self.jira + '.' + str(file_suffix) + '.patch'
-        with open(patch_file_path, 'w') as patch_file:
+        with open(patch_file_path, 'wb') as patch_file:
             patch_file.write(data)
+            patch_file.write("\n")
         print("patch file at: ", patch_file_path)
         if not self.issue.fields.assignee or self.issue.fields.assignee.name != \
                 self.client.jira_user:
