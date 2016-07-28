@@ -108,10 +108,12 @@ def main():
                       type=parsed_time)
     popt.add_argument('-v', '--verbose', action='store_true', dest='verbose', required=False, help='Verbose',
                       default=False)
+    popt.add_argument('--debug', action='store_true', dest='debug', required=False, help='Debug',
+                      default=False)
     opt = popt.parse_args()
 
     logging.basicConfig(format='%(asctime)s %(name)-6s %(levelname)-6s %(message)s',
-                        level=logging.INFO if opt.verbose else logging.WARN)
+                        level=logging.DEBUG if opt.debug else logging.INFO if opt.verbose else logging.WARN)
 
     with RBTJIRAClient(opt) as client:
         def validate_jiras():

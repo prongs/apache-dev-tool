@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-version = '0.1.26'
+version = '0.1.27'
 name = 'apache_dev_tool'
 setup(
     name=name,
